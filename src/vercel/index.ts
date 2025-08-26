@@ -6,7 +6,7 @@ import { generateText } from "ai";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-import { BOSON_MCP_URL, CHAIN_MAP } from "./chains";
+import { BOSON_MCP_URL, CHAIN_MAP } from "./chains.ts";
 
 // Example test for the Boson MCP Server plugin
 async function testBosonMcpServerPlugin() {
