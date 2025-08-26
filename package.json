@@ -2,7 +2,6 @@
   "name": "agent-builder",
   "version": "1.0.0",
   "main": "eslint.config.js",
-  "type": "module",
   "scripts": {
     "start:vercel-agent": "npx cross-env NODE_ENV=production node -r dotenv/config src/vercel/index.ts",
     "start:telegram-bot-agent": "npx cross-env NODE_ENV=production node -r dotenv/config src/vercel/telegram.ts",
@@ -39,6 +38,7 @@
   },
   "dependencies": {
     "@bosonprotocol/agentic-commerce": "^1.0.0-alpha.85",
+    "@bosonprotocol/common": "^1.31.0-alpha.11",
     "dotenv": "^17.2.1",
     "grammy": "^1.38.1"
   },

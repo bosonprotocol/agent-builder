@@ -3,16 +3,36 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { getOnChainTools } from "@goat-sdk/adapter-vercel-ai";
 import { viem } from "@goat-sdk/wallet-viem";
 import { generateText } from "ai";
-import { createWalletClient, http, createPublicClient } from "viem";
+import type { CoreTool } from "ai";
+import zod from "zod";
+import {
+  createWalletClient,
+  http,
+  createPublicClient,
+  formatUnits,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { polygonAmoy } from "viem/chains";
+import {
+  polygonAmoy,
+  mainnet,
+  arbitrum,
+  optimism,
+  baseSepolia,
+  base,
+  arbitrumSepolia,
+  optimismSepolia,
+  sepolia,
+  polygon,
+} from "viem/chains";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-
+import { getChainIdFromConfigId, getEnvConfigs } from "@bosonprotocol/common";
+import type { ChainId, ConfigId } from "@bosonprotocol/common";
+import { config } from "dotenv";
 // Environment variables validation
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const BOSON_MCP_URL = process.env.BOSON_MCP_URL;
-const RPC_URL = process.env.RPC_URL || "https://rpc-amoy.polygon.technology";
+const isStaging = BOSON_MCP_URL?.includes("staging");
 
 if (!TG_BOT_TOKEN) {
   throw new Error("TG_BOT_TOKEN environment variable is required");
@@ -25,7 +45,66 @@ if (!BOSON_MCP_URL) {
 if (!ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY environment variable is required");
 }
-const chain = polygonAmoy; // TODO: should match CONFIG_IDS of MCP server
+
+const ALL_CHAINS_MAP = {
+  1: {
+    chain: mainnet,
+    rpc:
+      mainnet.rpcUrls.default.http[0] ||
+      "https://eth-mainnet.public.blastapi.io",
+  },
+  137: {
+    chain: polygon,
+    rpc: polygon.rpcUrls.default.http[0] || "https://polygon-rpc.com",
+  }, // Polygon mainnet
+  80002: {
+    chain: polygonAmoy,
+    rpc:
+      polygonAmoy.rpcUrls.default.http[0] ||
+      "https://rpc-amoy.polygon.technology",
+  },
+  42161: {
+    chain: arbitrum,
+    rpc: arbitrum.rpcUrls.default.http[0] || "https://arb1.arbitrum.io/rpc",
+  },
+  10: {
+    chain: optimism,
+    rpc: optimism.rpcUrls.default.http[0] || "https://mainnet.optimism.io",
+  },
+  "11155111": {
+    chain: sepolia,
+    rpc: sepolia.rpcUrls.default.http[0] || "https://sepolia.infura.io/v3/",
+  },
+  "11155420": {
+    chain: optimismSepolia,
+    rpc:
+      optimismSepolia.rpcUrls.default.http[0] || "https://sepolia.optimism.io",
+  },
+  "31337": { chain: { ...mainnet, id: 31337 }, rpc: "http://localhost:8545" }, // Local Hardhat
+  "421614": {
+    chain: arbitrumSepolia,
+    rpc:
+      arbitrumSepolia.rpcUrls.default.http[0] ||
+      "https://api.zan.top/arb-sepolia",
+  }, // Arbitrum Sepolia
+  "8453": {
+    chain: base,
+    rpc: base.rpcUrls.default.http[0] || "https://base.llamarpc.com",
+  }, // Base mainnet
+  "84532": {
+    chain: baseSepolia,
+    rpc:
+      baseSepolia.rpcUrls.default.http[0] ||
+      "https://base-sepolia.api.onfinality.io/public",
+  }, // Base Sepolia
+} satisfies Record<ChainId, { chain: any; rpc: string }>;
+const envConfigs = getEnvConfigs(isStaging ? "staging" : "production");
+const CHAIN_MAP = Object.fromEntries(
+  Object.entries(ALL_CHAINS_MAP).filter(([chainId]) =>
+    envConfigs.some((config) => config.chainId.toString() === chainId)
+  )
+);
+
 // Create Anthropic client
 const anthropic = createAnthropic({
   apiKey: ANTHROPIC_API_KEY,
@@ -39,20 +118,83 @@ const userContexts = new Map<
   number,
   Array<{ role: "user" | "assistant"; content: string }>
 >();
-const userWallets = new Map<
-  number,
-  { privateKey: string; address: string; tools: any }
->();
 
-// Initialize wallet and get on-chain tools for a specific user
-async function initializeUserWallet(privateKey: string) {
+interface WalletData {
+  privateKey: string;
+  address: string;
+  // Store tools per chain/config
+  chainTools: Map<number, any>; // chainId -> tools
+  availableConfigs: ConfigData[]; // Available MCP configurations
+}
+
+interface ConfigData {
+  id: string;
+  chainId: number;
+  name: string;
+}
+
+const userWallets = new Map<number, WalletData>();
+
+// Get available config IDs from MCP server
+async function getAvailableConfigs(): Promise<ConfigData[]> {
   try {
-    // Ensure private key has 0x prefix and is the correct length
+    console.log("🔍 Fetching available MCP configurations...");
+
+    // Initialize tools without wallet to get read-only access
+    const tools = await getOnChainTools({
+      wallet: viem(
+        createWalletClient({
+          // No wallet needed for read-only
+          chain: polygonAmoy,
+          transport: http("https://rpc-amoy.polygon.technology"),
+        })
+      ),
+      plugins: [bosonProtocolPlugin({ url: BOSON_MCP_URL })],
+    });
+    // Call get_config_ids tool if available
+    if (
+      tools.get_config_ids &&
+      typeof tools.get_config_ids === "object" &&
+      "execute" in tools.get_config_ids &&
+      typeof tools.get_config_ids.execute === "function"
+    ) {
+      const configResult = await tools.get_config_ids.execute(null, null);
+      console.log("✅ Available MCP configurations:", configResult);
+      return (
+        JSON.parse(configResult.message[0].text).configIds.map(
+          (configId: string) =>
+            ({
+              chainId: getChainIdFromConfigId(
+                isStaging ? "staging" : "production",
+                configId as ConfigId
+              ),
+              id: configId,
+              name: configId,
+            }) satisfies ConfigData
+        ) || []
+      );
+    } else {
+      console.warn("⚠️ get_config_ids tool not available");
+      return []; // fallback
+    }
+  } catch (error) {
+    console.error("❌ Failed to get MCP configurations:", error);
+    return []; // fallback
+  }
+}
+
+// Initialize wallet tools for a specific chain
+async function initializeWalletForChain(privateKey: string, chainId: number) {
+  try {
+    const chainConfig = CHAIN_MAP[chainId as keyof typeof CHAIN_MAP];
+    if (!chainConfig) {
+      throw new Error(`Unsupported chain ID: ${chainId}`);
+    }
+
     const formattedPrivateKey = privateKey.startsWith("0x")
       ? privateKey
       : `0x${privateKey}`;
 
-    // Validate private key format
     if (
       formattedPrivateKey.length !== 66 ||
       !/^0x[0-9a-fA-F]{64}$/.test(formattedPrivateKey)
@@ -66,31 +208,92 @@ async function initializeUserWallet(privateKey: string) {
 
     const walletClient = createWalletClient({
       account,
-      chain,
-      transport: http(RPC_URL),
+      chain: chainConfig.chain,
+      transport: http(chainConfig.rpc),
     });
 
-    // Check balance
-    const publicClient = createPublicClient({
-      chain,
-      transport: http(RPC_URL),
-    });
-
-    const balance = await publicClient.getBalance({ address: account.address });
-    console.log(`💰 User wallet initialized: ${account.address}`);
-    console.log(`💰 Balance: ${balance} MATIC on ${chain.name}`);
-
-    // Get on-chain tools with Boson Protocol plugin
+    // Get tools for this specific chain
     const tools = await getOnChainTools({
       wallet: viem(walletClient),
       plugins: [bosonProtocolPlugin({ url: BOSON_MCP_URL })],
     });
 
+    console.log(
+      `✅ Wallet tools initialized for chain ${chainId} (${chainConfig.chain.name})`
+    );
+    return tools;
+  } catch (error) {
+    throw new Error(
+      `Failed to initialize wallet for chain ${chainId}: ${error}`
+    );
+  }
+}
+
+// Get or create wallet tools for a specific config
+async function getWalletToolsForConfig(userId: number, configId: string) {
+  const walletData = userWallets.get(userId);
+  if (!walletData) {
+    throw new Error(
+      "No wallet configured. Use /wallet to set up your private key."
+    );
+  }
+
+  // Find the config to get chain ID
+  const config = walletData.availableConfigs.find(
+    (c) => c.id === configId || c.chainId.toString() === configId
+  );
+  if (!config) {
+    throw new Error(`Configuration ${configId} not found in available configs`);
+  }
+
+  const chainId = config.chainId;
+
+  // Check if we already have tools for this chain
+  if (walletData.chainTools.has(chainId)) {
+    return walletData.chainTools.get(chainId);
+  }
+
+  // Initialize tools for this chain
+  console.log(`🔧 Initializing wallet tools for chain ${chainId}...`);
+  const tools = await initializeWalletForChain(walletData.privateKey, chainId);
+
+  // Cache the tools
+  walletData.chainTools.set(chainId, tools);
+
+  return tools;
+}
+
+// Initialize user wallet with all available configurations
+async function initializeUserWallet(privateKey: string) {
+  try {
+    const formattedPrivateKey = privateKey.startsWith("0x")
+      ? privateKey
+      : `0x${privateKey}`;
+
+    if (
+      formattedPrivateKey.length !== 66 ||
+      !/^0x[0-9a-fA-F]{64}$/.test(formattedPrivateKey)
+    ) {
+      throw new Error(
+        "Invalid private key format. Must be 64 hex characters (with or without 0x prefix)"
+      );
+    }
+
+    const account = privateKeyToAccount(formattedPrivateKey as `0x${string}`);
+
+    // Get available configurations from MCP
+    const availableConfigs = await getAvailableConfigs();
+
+    console.log(`💰 User wallet initialized: ${account.address}`);
+    console.log(
+      `🔧 Available configurations: ${JSON.stringify(availableConfigs, null, 2)}`
+    );
+
     return {
       privateKey: formattedPrivateKey,
       address: account.address,
-      tools,
-      balance: balance.toString(),
+      chainTools: new Map<number, any>(),
+      availableConfigs,
     };
   } catch (error) {
     throw new Error(`Failed to initialize wallet: ${error}`);
@@ -100,32 +303,22 @@ async function initializeUserWallet(privateKey: string) {
 // Get default tools without wallet
 async function getDefaultTools() {
   try {
-    // Initialize without wallet - some tools may still work
-    console.log("⚠️  Initializing tools without wallet support");
-    const walletClient = createWalletClient({
-      // TODO: not sure if this is ok or walletClient should be undefined
-      account: undefined as any,
-      chain,
-      transport: http(RPC_URL),
-    });
+    console.log("⚠️ Initializing tools without wallet support");
     const tools = await getOnChainTools({
-      wallet: viem(walletClient),
+      wallet: undefined as any,
       plugins: [bosonProtocolPlugin({ url: BOSON_MCP_URL })],
     });
 
     console.log("🔧 Available default MCP tools:", Object.keys(tools));
     return tools;
   } catch (error) {
-    console.warn(
-      "⚠️ Failed to initialize default tools, falling back to empty tools (this error is expected):",
-      error
-    );
+    console.warn("⚠️ Failed to initialize default tools:", error);
     return {};
   }
 }
 
 // Initialize tools on startup
-let mcpTools: any = {};
+let mcpTools: Record<string, CoreTool> = {};
 
 // Handle /start command
 bot.command("start", async (ctx) => {
@@ -135,6 +328,7 @@ bot.command("start", async (ctx) => {
 • Just send me any message and I'll respond using Claude AI
 • /wallet - Set up your wallet for blockchain operations
 • /wallet_status - Check your wallet status
+• /chains - View supported chains and configurations
 • /remove_wallet - Remove your wallet (for security)
 • /clear - Clear conversation history
 • /help - Show this message again
@@ -149,23 +343,37 @@ bot.command("start", async (ctx) => {
   await ctx.reply(welcomeMessage);
 });
 
-// Handle /help command
-bot.command("help", async (ctx) => {
-  await ctx.reply(`🆘 Help - Claude AI Bot with MCP Integration
+// Handle /chains command
+bot.command("chains", async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId) return;
 
-This bot uses Claude AI and can interact with the Boson Protocol MCP server for blockchain operations.
+  try {
+    const configs = await getAvailableConfigs();
 
-📝 Commands:
-• /start - Welcome message
-• /wallet - Set up your private key for blockchain operations
-• /wallet_status - Check your wallet status and balance
-• /remove_wallet - Remove your wallet for security
-• /clear - Clear conversation history
-• /help - Show this help
+    let message = "🔗 **Available Blockchain Configurations:**\n\n";
 
-💬 Just send any message and I'll respond using Claude AI with access to blockchain tools!
+    configs.forEach((config: ConfigData) => {
+      const chainInfo = CHAIN_MAP[config.chainId as keyof typeof CHAIN_MAP];
 
-🔒 **Security**: Private keys are stored in memory only, never saved to disk.`);
+      message += `📍 **${config.id}**\n`;
+      message += `   • Network: ${chainInfo.chain.name}\n`;
+      message += `   • Chain ID: ${config.chainId}\n`;
+      message += "\n";
+    });
+
+    const walletData = userWallets.get(userId);
+    if (walletData) {
+      message += `\n🔧 Your wallet is configured and can operate on all these chains.\n`;
+      message += `💡 Tools will be initialized automatically when needed for each chain.`;
+    } else {
+      message += `\n⚠️ Use /wallet to set up your private key for blockchain operations.`;
+    }
+
+    await ctx.reply(message, { parse_mode: "HTML" });
+  } catch (error) {
+    await ctx.reply(`❌ Error fetching chain information: ${error}`);
+  }
 });
 
 // Handle /wallet command
@@ -176,13 +384,12 @@ bot.command("wallet", async (ctx) => {
   if (userWallets.has(userId)) {
     const wallet = userWallets.get(userId)!;
     await ctx.reply(
-      `🔒 You already have a wallet configured!\n\n💰 Address: ${wallet.address} \n\nUse /remove_wallet to remove it first if you want to change it.`,
+      `🔒 You already have a wallet configured!\n\n💰 Address: ${wallet.address}\n🔧 Configurations: ${wallet.availableConfigs.length} available\n\nUse /remove_wallet to remove it first if you want to change it.`,
       { parse_mode: "HTML" }
     );
     return;
   }
 
-  // Add user to waiting list for private key input
   waitingForPrivateKey.add(userId);
 
   await ctx.reply(
@@ -197,7 +404,7 @@ Please send me your private key in the next message.
 • Only use test wallets/keys, never your main wallet
 
 📝 *Format*: Send just the private key (with or without 0x prefix)
-🚰 *Get test MATIC*: https://faucet.polygon.technology/
+🚰 *Get test tokens*: Use faucets for the chains you want to use
 
 Send your private key now:`,
     { parse_mode: "HTML" }
@@ -218,28 +425,40 @@ bot.command("wallet_status", async (ctx) => {
   }
 
   try {
-    // Get fresh balance
-    const publicClient = createPublicClient({
-      chain: polygonAmoy,
-      transport: http(RPC_URL),
-    });
+    let statusMessage = `✅ **Wallet Status**\n\n💰 **Address**: ${wallet.address}\n🔧 **Available Configurations**: ${wallet.availableConfigs.length}\n\n`;
 
-    const balance = await publicClient.getBalance({
-      address: wallet.address as `0x${string}`,
-    });
-    const balanceInMatic = (Number(balance) / 1e18).toFixed(4);
+    // Show status for each available chain
+    for (const config of wallet.availableConfigs) {
+      const chainInfo = CHAIN_MAP[config.chainId as keyof typeof CHAIN_MAP];
+      if (chainInfo) {
+        statusMessage += `📍 **${config.name || `Chain ${config.chainId}`}**\n`;
 
-    await ctx.reply(
-      `✅ *Wallet Status*
+        try {
+          const publicClient = createPublicClient({
+            chain: chainInfo.chain,
+            transport: http(chainInfo.rpc),
+          });
 
-💰 *Address*: ${wallet.address}
-💎 *Balance*: ${balanceInMatic} MATIC
-🔗 *Network*: Polygon Amoy (Testnet)
-🛠️ *MCP Tools*: ${Object.keys(wallet.tools).length} available
+          const balance = await publicClient.getBalance({
+            address: wallet.address as `0x${string}`,
+          });
+          const balanceFormatted = formatUnits(
+            balance,
+            chainInfo.chain.nativeCurrency.decimals
+          );
+          statusMessage += `   • Balance: ${balanceFormatted} ${chainInfo.chain.nativeCurrency?.symbol || "ETH"}\n`;
+        } catch (error) {
+          statusMessage += `   • Balance: Error fetching\n`;
+        }
 
-🔒 *Security*: Private key stored in memory only`,
-      { parse_mode: "HTML" }
-    );
+        const hasTools = wallet.chainTools.has(config.chainId);
+        statusMessage += `   • Tools: ${hasTools ? "Initialized" : "Will initialize when needed"}\n\n`;
+      }
+    }
+
+    statusMessage += `🔒 **Security**: Private key stored in memory only`;
+
+    await ctx.reply(statusMessage, { parse_mode: "HTML" });
   } catch (error) {
     await ctx.reply(`❌ Error checking wallet status: ${error}`);
   }
@@ -257,7 +476,8 @@ bot.command("remove_wallet", async (ctx) => {
 
   userWallets.delete(userId);
   await ctx.reply(
-    "🗑️ *Wallet removed successfully!*\n\nYour private key has been cleared from memory for security."
+    "🗑️ *Wallet removed successfully!*\n\nYour private key and all chain tools have been cleared from memory for security.",
+    { parse_mode: "HTML" }
   );
 });
 
@@ -279,10 +499,8 @@ async function handlePrivateKeyInput(
   userId: number,
   privateKey: string
 ) {
-  // Remove user from waiting list
   waitingForPrivateKey.delete(userId);
 
-  // Delete the message containing the private key for security
   try {
     await ctx.deleteMessage();
   } catch (error) {
@@ -292,28 +510,19 @@ async function handlePrivateKeyInput(
   try {
     await ctx.replyWithChatAction("typing");
 
-    // Initialize wallet with the provided private key
     const walletData = await initializeUserWallet(privateKey);
-
-    // Store wallet data for the user
     userWallets.set(userId, walletData);
 
-    const balanceInMatic = (Number(walletData.balance) / 1e18).toFixed(4);
-
     await ctx.reply(
-      `✅ *Wallet configured successfully!*\n\n💰 *Address*: ${
-        walletData.address
-      }
-💎 *Balance*: ${balanceInMatic} MATIC
-🔗 *Network*: Polygon Amoy (Testnet)
-🛠️ *MCP Tools*: ${
-        Object.keys(walletData.tools).length
-      } blockchain tools available
+      `✅ *Wallet configured successfully!*\n\n💰 **Address**: ${walletData.address}
+🔧 **Configurations**: ${walletData.availableConfigs.length} blockchain configurations available
+🛠️ **Tools**: Will be initialized automatically for each chain when needed
 
 🔒 Your private key is stored securely in memory only.
 🗑️ Use /remove_wallet to clear it when done.
+📍 Use /chains to see all supported networks.
 
-You can now use blockchain features! Try asking me about Boson Protocol or blockchain operations.`,
+You can now use blockchain features across multiple chains! Try asking me about Boson Protocol or blockchain operations.`,
       { parse_mode: "HTML" }
     );
   } catch (error) {
@@ -321,11 +530,11 @@ You can now use blockchain features! Try asking me about Boson Protocol or block
 
 Error: ${error}
 
-Please try again with a valid private key. Make sure it's a 64-character hex string (with or without 0x prefix).`);
+Please try again with a valid private key.`);
   }
 }
 
-// Handle all text messages
+// Enhanced message handling with dynamic tool initialization
 bot.on("message:text", async (ctx) => {
   const userId = ctx.from?.id;
   const userMessage = ctx.message.text;
@@ -334,47 +543,36 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  // Check if user is setting up a wallet
   if (waitingForPrivateKey.has(userId)) {
     await handlePrivateKeyInput(ctx, userId, userMessage);
     return;
   }
 
-  // Show typing indicator
   await ctx.replyWithChatAction("typing");
 
   try {
-    // Get user's tools (either their wallet tools or default tools)
     const userWallet = userWallets.get(userId);
-    const toolsToUse = userWallet ? userWallet.tools : mcpTools;
-
-    // Get or initialize user context
     let context = userContexts.get(userId) || [];
-
-    // Add user message to context
     context.push({ role: "user", content: userMessage });
 
-    // Keep context manageable (last 10 messages)
     if (context.length > 10) {
       context = context.slice(-10);
     }
 
-    // Create system message with MCP capabilities
     let systemMessage = `You are Claude, an AI assistant integrated with a Telegram bot. You have access to the Boson Protocol MCP server for blockchain and e-commerce operations.`;
 
     if (userWallet) {
       systemMessage += `\n\nThe user has a wallet configured:
 - Address: ${userWallet.address}
-- You have access to blockchain tools for this wallet
+- Available configurations: ${userWallet.availableConfigs.map((c) => `${c.name || "Chain " + c.chainId} (${c.chainId})`).join(", ")}
 
-You can perform blockchain operations, smart contract interactions, and e-commerce functionality using the MCP tools.`;
+When you need to use blockchain tools for a specific operation, the system will automatically initialize the appropriate chain tools based on the config_id parameter. You can reference any of the available chain configurations.`;
     } else {
       systemMessage += `\n\nThe user has not configured a wallet yet. You can still provide general information, but for blockchain operations, suggest they use /wallet to set up their private key.`;
     }
 
     systemMessage += `\n\nBe helpful, conversational, and use the MCP tools when relevant. Always provide clear and concise responses suitable for a chat interface.`;
 
-    // Prepare messages for Claude
     const messages = [
       { role: "system" as const, content: systemMessage },
       ...context.map((msg) => ({
@@ -382,47 +580,49 @@ You can perform blockchain operations, smart contract interactions, and e-commer
         content: msg.content,
       })),
     ];
-
-    let result;
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
-      try {
-        result = await generateText({
-          model: anthropic("claude-3-5-sonnet-20241022"),
-          messages,
-          tools: toolsToUse,
-          maxSteps: 10,
-        });
-        break; // Success, exit loop
-      } catch (error) {
-        attempts++;
-        console.error(`Attempt ${attempts} failed:`, error);
-        if (attempts >= maxAttempts) {
-          throw error; // Rethrow error after max attempts
+    const supportedConfigIds = userWallet?.availableConfigs.map(
+      (config) => config.id
+    );
+    const resolveToolForConfig: CoreTool = {
+      type: "function",
+      parameters: zod.object({
+        configId: zod.string().refine(
+          (value) => supportedConfigIds?.includes(value as ConfigId),
+          (value) => ({
+            message: `Invalid config ID: ${value}. Supported config IDs: ${supportedConfigIds?.join(", ")}`,
+          })
+        ),
+      }),
+      execute: async ({ configId }: { configId: string }) => {
+        return await getWalletToolsForConfig(userId, configId);
+      },
+    };
+    // Create a dynamic tool resolver that initializes tools as needed
+    const toolResolver = userWallet
+      ? {
+          ...mcpTools,
+          // Add a wrapper that can dynamically initialize chain-specific tools
+          resolveToolForConfig,
         }
-        // Add error to messages for the next attempt
-        messages.push({
-          role: "assistant",
-          content: `Tool call failed with error: ${error}. I will try again.`,
-        });
-      }
-    }
+      : mcpTools;
+
+    const result = await generateText({
+      model: anthropic("claude-3-5-sonnet-20241022"),
+      messages,
+      tools: toolResolver,
+      maxSteps: 10,
+    });
 
     const responseText =
       result.text || "Sorry, I couldn't generate a response.";
-
-    // Add assistant response to context
     context.push({ role: "assistant", content: responseText });
     userContexts.set(userId, context);
 
-    // Split long messages to respect Telegram's limits
+    // Split long messages
     const maxMessageLength = 4096;
     if (responseText.length <= maxMessageLength) {
       await ctx.reply(responseText);
     } else {
-      // Split message into chunks
       const chunks = [];
       for (let i = 0; i < responseText.length; i += maxMessageLength) {
         chunks.push(responseText.slice(i, i + maxMessageLength));
@@ -472,17 +672,14 @@ async function startBot() {
   console.log("🚀 Starting Telegram bot with Claude AI and MCP integration...");
   console.log(`📡 MCP Server URL: ${BOSON_MCP_URL}`);
 
-  // Initialize default MCP tools (without wallet)
   try {
     mcpTools = await getDefaultTools();
     console.log("✅ Default MCP tools initialized successfully");
   } catch (error) {
     console.error("❌ Failed to initialize default MCP tools:", error);
-    console.log("🔄 Bot will start without MCP tools");
     mcpTools = {};
   }
 
-  // Start the bot
   bot.start();
   console.log("✅ Bot started successfully");
 }
