@@ -12,98 +12,23 @@ import {
   formatUnits,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import {
-  polygonAmoy,
-  mainnet,
-  arbitrum,
-  optimism,
-  baseSepolia,
-  base,
-  arbitrumSepolia,
-  optimismSepolia,
-  sepolia,
-  polygon,
-} from "viem/chains";
+import { polygonAmoy } from "viem/chains";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-import { getChainIdFromConfigId, getEnvConfigs } from "@bosonprotocol/common";
-import type { ChainId, ConfigId } from "@bosonprotocol/common";
-import { config } from "dotenv";
+import { getChainIdFromConfigId } from "@bosonprotocol/common";
+import type { ConfigId } from "@bosonprotocol/common";
+import { BOSON_MCP_URL, CHAIN_MAP, isStaging } from "./chains";
+
 // Environment variables validation
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const BOSON_MCP_URL = process.env.BOSON_MCP_URL;
-const isStaging = BOSON_MCP_URL?.includes("staging");
 
 if (!TG_BOT_TOKEN) {
   throw new Error("TG_BOT_TOKEN environment variable is required");
 }
 
-if (!BOSON_MCP_URL) {
-  throw new Error("BOSON_MCP_URL environment variable is required");
-}
-
 if (!ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY environment variable is required");
 }
-
-const ALL_CHAINS_MAP = {
-  1: {
-    chain: mainnet,
-    rpc:
-      mainnet.rpcUrls.default.http[0] ||
-      "https://eth-mainnet.public.blastapi.io",
-  },
-  137: {
-    chain: polygon,
-    rpc: polygon.rpcUrls.default.http[0] || "https://polygon-rpc.com",
-  }, // Polygon mainnet
-  80002: {
-    chain: polygonAmoy,
-    rpc:
-      polygonAmoy.rpcUrls.default.http[0] ||
-      "https://rpc-amoy.polygon.technology",
-  },
-  42161: {
-    chain: arbitrum,
-    rpc: arbitrum.rpcUrls.default.http[0] || "https://arb1.arbitrum.io/rpc",
-  },
-  10: {
-    chain: optimism,
-    rpc: optimism.rpcUrls.default.http[0] || "https://mainnet.optimism.io",
-  },
-  "11155111": {
-    chain: sepolia,
-    rpc: sepolia.rpcUrls.default.http[0] || "https://sepolia.infura.io/v3/",
-  },
-  "11155420": {
-    chain: optimismSepolia,
-    rpc:
-      optimismSepolia.rpcUrls.default.http[0] || "https://sepolia.optimism.io",
-  },
-  "31337": { chain: { ...mainnet, id: 31337 }, rpc: "http://localhost:8545" }, // Local Hardhat
-  "421614": {
-    chain: arbitrumSepolia,
-    rpc:
-      arbitrumSepolia.rpcUrls.default.http[0] ||
-      "https://api.zan.top/arb-sepolia",
-  }, // Arbitrum Sepolia
-  "8453": {
-    chain: base,
-    rpc: base.rpcUrls.default.http[0] || "https://base.llamarpc.com",
-  }, // Base mainnet
-  "84532": {
-    chain: baseSepolia,
-    rpc:
-      baseSepolia.rpcUrls.default.http[0] ||
-      "https://base-sepolia.api.onfinality.io/public",
-  }, // Base Sepolia
-} satisfies Record<ChainId, { chain: any; rpc: string }>;
-const envConfigs = getEnvConfigs(isStaging ? "staging" : "production");
-const CHAIN_MAP = Object.fromEntries(
-  Object.entries(ALL_CHAINS_MAP).filter(([chainId]) =>
-    envConfigs.some((config) => config.chainId.toString() === chainId)
-  )
-);
 
 // Create Anthropic client
 const anthropic = createAnthropic({
@@ -145,7 +70,7 @@ async function getAvailableConfigs(): Promise<ConfigData[]> {
       wallet: viem(
         createWalletClient({
           // No wallet needed for read-only
-          chain: polygonAmoy,
+          chain: polygonAmoy, // it doesn't matter which chain here, get_config_ids tool doesnt need any wallet
           transport: http("https://rpc-amoy.polygon.technology"),
         })
       ),

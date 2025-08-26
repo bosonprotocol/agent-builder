@@ -5,8 +5,8 @@ import { viem } from "@goat-sdk/wallet-viem";
 import { generateText } from "ai";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { polygonAmoy } from "viem/chains";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
+import { BOSON_MCP_URL, CHAIN_MAP } from "./chains";
 
 // Example test for the Boson MCP Server plugin
 async function testBosonMcpServerPlugin() {
@@ -19,7 +19,7 @@ async function testBosonMcpServerPlugin() {
   if (!anthopicApiKey) {
     throw new Error("ANTHROPIC_API_KEY environment variable is required");
   }
-  const bosonMcpUrl = process.env.BOSON_MCP_URL;
+  const bosonMcpUrl = BOSON_MCP_URL;
   if (!bosonMcpUrl) {
     throw new Error("BOSON_MCP_URL environment variable is required");
   }
@@ -43,11 +43,12 @@ async function testBosonMcpServerPlugin() {
 
   const account = privateKeyToAccount(privateKey as `0x${string}`);
 
-  // Use testnet for development (change chain as needed)
-  const chain = polygonAmoy;
+  // Use first supported chain from the CHAIN_MAP which depends on the BOSON_MCP_URL and hence its environment
+  const chainConfig = Object.values(CHAIN_MAP)[0];
+  const chain = chainConfig.chain;
 
   // Define custom RPC URL (optional)
-  const rpcUrl = process.env.RPC_URL || "https://rpc-amoy.polygon.technology";
+  const rpcUrl = chainConfig.rpc;
   console.log("Using RPC URL:", rpcUrl);
 
   const walletClient = createWalletClient({
@@ -110,7 +111,7 @@ async function testBosonMcpServerPlugin() {
     console.log("\n-------------------\n");
     try {
       const result = await generateText({
-        model: anthropic("claude-4-sonnet-20250514"),
+        model: anthropic("claude-4-sonnet-20250514"), // change model as needed
         tools: tools,
         maxSteps: 10, // Maximum number of tool invocations per request
         prompt: prompt,
