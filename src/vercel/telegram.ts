@@ -607,7 +607,7 @@ When you need to use blockchain tools for a specific operation, the system will 
       : mcpTools;
 
     const result = await generateText({
-      model: anthropic("claude-3-5-sonnet-20241022"),
+      model: anthropic("claude-3-5-sonnet-20241022"), // TODO: change model
       messages,
       tools: toolResolver,
       maxSteps: 10,
@@ -619,7 +619,7 @@ When you need to use blockchain tools for a specific operation, the system will 
     userContexts.set(userId, context);
 
     // Split long messages
-    const maxMessageLength = 4096;
+    const maxMessageLength = 4096; // TODO: maybe this should be increased
     if (responseText.length <= maxMessageLength) {
       await ctx.reply(responseText);
     } else {
