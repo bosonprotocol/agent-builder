@@ -320,9 +320,7 @@ async function getDefaultTools() {
 // Initialize tools on startup
 let mcpTools: Record<string, CoreTool> = {};
 
-// Handle /start command
-bot.command("start", async (ctx) => {
-  const welcomeMessage = `🤖 Welcome to your Claude AI Telegram Bot with Boson Protocol MCP integration!
+const welcomeMessage = `🤖 Welcome to your Claude AI Telegram Bot with Boson Protocol MCP integration!
 
 🔧 Available commands:
 • Just send me any message and I'll respond using Claude AI
@@ -330,7 +328,7 @@ bot.command("start", async (ctx) => {
 • /wallet_status - Check your wallet status
 • /chains - View supported chains and configurations
 • /remove_wallet - Remove your wallet (for security)
-• /clear - Clear conversation history
+• /clear - Clear user data
 • /help - Show this message again
 
 💡 Examples of what you can ask:
@@ -340,6 +338,13 @@ bot.command("start", async (ctx) => {
 
 🔒 **Security Note**: Your private key is stored securely in memory only and never logged or saved to disk.`;
 
+// Handle /start command
+bot.command("start", async (ctx) => {
+  await ctx.reply(welcomeMessage);
+});
+
+// Handle /help command
+bot.command("help", async (ctx) => {
   await ctx.reply(welcomeMessage);
 });
 
@@ -486,7 +491,7 @@ bot.command("clear", async (ctx) => {
   const userId = ctx.from?.id;
   if (userId) {
     userContexts.delete(userId);
-    await ctx.reply("🧹 Conversation history cleared!");
+    await ctx.reply("🧹 User data has been cleared!");
   }
 });
 
