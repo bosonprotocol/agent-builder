@@ -20,6 +20,12 @@ if (!BOSON_MCP_URL) {
   throw new Error("BOSON_MCP_URL environment variable is required");
 }
 
+if (!isStaging && !BOSON_MCP_URL?.includes("production")) {
+  throw new Error(
+    "BOSON_MCP_URL must include 'production' for production environment or 'staging' for staging environment"
+  );
+}
+
 const ALL_CHAINS_MAP = {
   1: {
     chain: mainnet,
