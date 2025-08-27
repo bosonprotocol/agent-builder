@@ -16,7 +16,7 @@ import { polygonAmoy } from "viem/chains";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
 import { getChainIdFromConfigId } from "@bosonprotocol/common";
 import type { ConfigId } from "@bosonprotocol/common";
-import { BOSON_MCP_URL, CHAIN_MAP, isStaging } from "./chains.ts";
+import { BOSON_MCP_URL, CHAIN_MAP, isStaging } from "@common/chains.ts";
 
 // Environment variables validation
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;

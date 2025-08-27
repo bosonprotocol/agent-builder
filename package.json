@@ -2,9 +2,14 @@
   "name": "agent-builder",
   "version": "1.0.0",
   "main": "eslint.config.js",
+  "packageManager": "npm@11.5.2",
+  "workspaces": [
+    "src/examples/standalone/vercel",
+    "src/examples/telegram/vercel"
+  ],
   "scripts": {
-    "start:vercel-agent": "npx cross-env NODE_ENV=production node -r dotenv/config src/vercel/index.ts",
-    "start:telegram-bot-agent": "npx cross-env NODE_ENV=production node -r dotenv/config src/vercel/telegram.ts",
+    "start:standalone-vercel": "turbo run interact --filter=./src/examples/standalone/vercel --ui=tui",
+    "start:telegram-bot-vercel": "turbo run start --filter=./src/examples/telegram/vercel",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "lint:ci": "eslint . --ext ts --report-unused-disable-directives --max-warnings 100",
     "lint:fix": "eslint . --ext ts --fix"
@@ -34,15 +39,19 @@
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unused-imports": "^4.1.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "turbo": "^2.5.6",
     "typescript-eslint": "^8.40.0"
   },
   "dependencies": {
-    "@bosonprotocol/agentic-commerce": "^1.0.0-alpha.85",
+    "@bosonprotocol/agentic-commerce": "^1.0.0-alpha.86",
     "@bosonprotocol/common": "^1.31.0-alpha.11",
     "dotenv": "^17.2.1",
     "grammy": "^1.38.1"
   },
   "volta": {
-    "node": "23.11.1"
+    "node": "23.11.1",
+    "npm": "11.5.2"
   }
 }

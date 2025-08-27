@@ -1,0 +1,17 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "start": {
+      "dependsOn": [],
+      "cache": false,
+      "outputs": [],
+      "interactive": false
+    },
+    "interact": {
+      "dependsOn": [],
+      "cache": false,
+      "outputs": [],
+      "interactive": true
+    }
+  }
+}
