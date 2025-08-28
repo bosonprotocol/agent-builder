@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "main": "eslint.config.js",
   "packageManager": "npm@11.5.2",
+  "type": "commonjs",
   "workspaces": [
     "src/examples/standalone/vercel",
     "src/examples/telegram/vercel"
   ],
   "scripts": {
     "start:standalone-vercel": "turbo run interact --filter=./src/examples/standalone/vercel --ui=tui",
+    "start:email": "turbo run interact --filter=./src/examples/email --ui=tui",
     "start:telegram-bot-vercel": "turbo run start --filter=./src/examples/telegram/vercel",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "lint:ci": "eslint . --ext ts --report-unused-disable-directives --max-warnings 100",
