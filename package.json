@@ -6,7 +6,8 @@
   "type": "commonjs",
   "workspaces": [
     "src/examples/standalone/vercel",
-    "src/examples/telegram/vercel"
+    "src/examples/telegram/vercel",
+    "src/examples/email"
   ],
   "scripts": {
     "start:standalone-vercel": "turbo run interact --filter=./src/examples/standalone/vercel --ui=tui",
