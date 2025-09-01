@@ -1,12 +1,13 @@
 import readline from "node:readline";
+
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
+import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 import { getOnChainTools } from "@goat-sdk/adapter-vercel-ai";
 import { viem } from "@goat-sdk/wallet-viem";
 import { generateText } from "ai";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 
 // Example test for the Boson MCP Server plugin
 async function testBosonMcpServerPlugin() {
@@ -23,6 +24,10 @@ async function testBosonMcpServerPlugin() {
   if (!bosonMcpUrl) {
     throw new Error("BOSON_MCP_URL environment variable is required");
   }
+  const chainId = process.env.CHAIN_ID;
+  if (!chainId) {
+    throw new Error("CHAIN_ID environment variable is required");
+  }
 
   // Ensure private key has 0x prefix and is the correct length
   const privateKey = rawPrivateKey.startsWith("0x")
@@ -33,7 +38,7 @@ async function testBosonMcpServerPlugin() {
   if (privateKey.length !== 66) {
     // 0x + 64 hex characters = 66 total
     throw new Error(
-      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`
+      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`,
     );
   }
 
@@ -43,8 +48,7 @@ async function testBosonMcpServerPlugin() {
 
   const account = privateKeyToAccount(privateKey as `0x${string}`);
 
-  // Use first supported chain from the CHAIN_MAP which depends on the BOSON_MCP_URL and hence its environment
-  const chainConfig = Object.values(CHAIN_MAP)[0];
+  const chainConfig = CHAIN_MAP[chainId as keyof typeof CHAIN_MAP];
   const chain = chainConfig.chain;
 
   // Define custom RPC URL (optional)
@@ -81,9 +85,12 @@ async function testBosonMcpServerPlugin() {
   const tools = await getOnChainTools({
     wallet: viem(walletClient),
     plugins: [
-      bosonProtocolPlugin({ url: bosonMcpUrl }),
+      bosonProtocolPlugin({
+        url: bosonMcpUrl,
+      }),
       // ...other plugins
-    ],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any[], // to avoid error TS2589: Type instantiation is excessively deep and possibly infinite.
   });
 
   console.log("Available tools:", Object.keys(tools));
@@ -96,6 +103,9 @@ async function testBosonMcpServerPlugin() {
     output: process.stdout,
   });
 
+  let system: string | undefined = undefined;
+  let parameters: string | undefined = undefined;
+
   while (true) {
     const prompt = await new Promise<string>((resolve) => {
       rl.question('Enter your prompt (or "exit" to quit): ', resolve);
@@ -106,6 +116,17 @@ async function testBosonMcpServerPlugin() {
       break;
     }
 
+    if (prompt.startsWith("/system:")) {
+      system = prompt.replace("/system:", "").trim();
+      console.log("System prompt set.");
+      continue;
+    }
+    if (prompt.startsWith("/parameters:")) {
+      parameters = prompt.replace("/parameters:", "").trim();
+      console.log("Parameters set.");
+      continue;
+    }
+
     console.log("\n-------------------\n");
     console.log("TOOLS CALLED");
     console.log("\n-------------------\n");
@@ -113,8 +134,9 @@ async function testBosonMcpServerPlugin() {
       const result = await generateText({
         model: anthropic("claude-4-sonnet-20250514"), // change model as needed
         tools: tools,
-        maxSteps: 10, // Maximum number of tool invocations per request
-        prompt: prompt,
+        maxSteps: 20, // Maximum number of tool invocations per request
+        prompt: `${prompt}${parameters ? `\n\nParameters: ${parameters}` : ""}`,
+        system: system,
         onStepFinish: (event) => {
           console.log(event.toolResults);
         },

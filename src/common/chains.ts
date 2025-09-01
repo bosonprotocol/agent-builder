@@ -1,28 +1,29 @@
+import { type ChainId, getEnvConfigs } from "@bosonprotocol/common";
 import {
-  polygonAmoy,
-  mainnet,
   arbitrum,
-  optimism,
-  baseSepolia,
-  base,
   arbitrumSepolia,
+  base,
+  baseSepolia,
+  mainnet,
+  optimism,
   optimismSepolia,
-  sepolia,
   polygon,
+  polygonAmoy,
+  sepolia,
 } from "viem/chains";
-import { getEnvConfigs } from "@bosonprotocol/common";
-import type { ChainId } from "@bosonprotocol/common";
 // Environment variables validation
 export const BOSON_MCP_URL = process.env.BOSON_MCP_URL;
 export const isStaging = BOSON_MCP_URL?.includes("staging");
+export const isLocal =
+  BOSON_MCP_URL?.includes("localhost") || BOSON_MCP_URL?.includes("127.0.0.1");
 
 if (!BOSON_MCP_URL) {
   throw new Error("BOSON_MCP_URL environment variable is required");
 }
 
-if (!isStaging && !BOSON_MCP_URL?.includes("production")) {
+if (!isLocal && !isStaging && !BOSON_MCP_URL?.includes("production")) {
   throw new Error(
-    "BOSON_MCP_URL must include 'production' for production environment or 'staging' for staging environment"
+    "BOSON_MCP_URL must include 'production' for production environment or 'staging' for staging environment",
   );
 }
 
@@ -60,7 +61,19 @@ const ALL_CHAINS_MAP = {
     rpc:
       optimismSepolia.rpcUrls.default.http[0] || "https://sepolia.optimism.io",
   },
-  "31337": { chain: { ...mainnet, id: 31337 }, rpc: "http://localhost:8545" }, // Local Hardhat
+  "31337": {
+    chain: {
+      ...mainnet,
+      id: 31337,
+      name: "Hardhat Local",
+      rpcUrls: {
+        default: {
+          http: ["http://localhost:8545"],
+        },
+      },
+    },
+    rpc: "http://localhost:8545",
+  }, // Local Hardhat
   "421614": {
     chain: arbitrumSepolia,
     rpc:
@@ -78,9 +91,11 @@ const ALL_CHAINS_MAP = {
       "https://base-sepolia.api.onfinality.io/public",
   }, // Base Sepolia
 } satisfies Record<ChainId, { chain: any; rpc: string }>;
-const envConfigs = getEnvConfigs(isStaging ? "staging" : "production");
+const envConfigs = getEnvConfigs(
+  isLocal ? "local" : isStaging ? "staging" : "production",
+);
 export const CHAIN_MAP = Object.fromEntries(
   Object.entries(ALL_CHAINS_MAP).filter(([chainId]) =>
-    envConfigs.some((config) => config.chainId.toString() === chainId)
-  )
+    envConfigs.some((config) => config.chainId.toString() === chainId),
+  ),
 );
