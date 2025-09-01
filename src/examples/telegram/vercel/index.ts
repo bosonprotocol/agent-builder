@@ -486,6 +486,7 @@ bot.on("message:text", async (ctx) => {
     context.push({ role: "user", content: userMessage });
 
     if (context.length > 10) {
+      // remove "if", if you need the model to keep a longer conversation in memory
       context = context.slice(-10);
     }
 

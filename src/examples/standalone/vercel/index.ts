@@ -95,6 +95,7 @@ async function testBosonMcpServerPlugin() {
     output: process.stdout,
   });
 
+  let conversationHistory: Parameters<typeof generateText>[0]["messages"] = [];
   while (true) {
     const prompt = await new Promise<string>((resolve) => {
       rl.question('Enter your prompt (or "exit" to quit): ', resolve);
@@ -105,6 +106,7 @@ async function testBosonMcpServerPlugin() {
       break;
     }
 
+    conversationHistory.push({ role: "user" as const, content: prompt });
     console.log("\n-------------------\n");
     console.log("TOOLS CALLED");
     console.log("\n-------------------\n");
@@ -113,7 +115,7 @@ async function testBosonMcpServerPlugin() {
         model: anthropic("claude-4-sonnet-20250514"), // change model as needed
         tools: tools,
         maxSteps: 10, // Maximum number of tool invocations per request
-        prompt: prompt,
+        messages: conversationHistory,
         onStepFinish: (event) => {
           console.log(event.toolResults);
         },
@@ -123,6 +125,14 @@ async function testBosonMcpServerPlugin() {
       console.log("RESPONSE");
       console.log("\n-------------------\n");
       console.log(result.text);
+      conversationHistory.push({
+        role: "assistant" as const,
+        content: result.text,
+      });
+      if (conversationHistory.length > 10) {
+        // remove "if", if you need the model to keep a longer conversation in memory
+        conversationHistory = conversationHistory.slice(-10);
+      }
     } catch (error) {
       console.error(error);
     }

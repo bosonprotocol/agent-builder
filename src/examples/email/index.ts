@@ -98,8 +98,7 @@ async function testBosonMcpServerPlugin() {
     output: process.stdout,
   });
 
-  const conversationHistory: Parameters<typeof generateText>[0]["messages"] =
-    [];
+  let conversationHistory: Parameters<typeof generateText>[0]["messages"] = [];
   while (true) {
     const prompt = await new Promise<string>((resolve) => {
       rl.question('Enter your prompt (or "exit" to quit): ', resolve);
@@ -195,6 +194,10 @@ Ensure final email follows professional format and includes signature.
         role: "assistant" as const,
         content: result.text,
       });
+      if (conversationHistory.length > 10) {
+        // remove "if", if you need the model to keep a longer conversation in memory
+        conversationHistory = conversationHistory.slice(-10);
+      }
     } catch (error) {
       console.error(error);
     }
