@@ -98,6 +98,8 @@ async function testBosonMcpServerPlugin() {
     output: process.stdout,
   });
 
+  const conversationHistory: Parameters<typeof generateText>[0]["messages"] =
+    [];
   while (true) {
     const prompt = await new Promise<string>((resolve) => {
       rl.question('Enter your prompt (or "exit" to quit): ', resolve);
@@ -107,7 +109,7 @@ async function testBosonMcpServerPlugin() {
       rl.close();
       break;
     }
-
+    conversationHistory.push({ role: "user" as const, content: prompt });
     console.log("\n-------------------\n");
     console.log("TOOLS CALLED");
     console.log("\n-------------------\n");
@@ -116,7 +118,70 @@ async function testBosonMcpServerPlugin() {
         model: anthropic("claude-4-sonnet-20250514"), // change model as needed
         tools: tools,
         maxSteps: 10, // Maximum number of tool invocations per request
-        prompt: prompt,
+        messages: conversationHistory,
+        system: `You are an AI agent responsible for communicating with sellers and dispute resolvers on behalf of a buyer.
+Your role is to generate and send professional, structured emails to sellers or dispute resolvers, based on product or seller information retrieved from the Boson Protocol.
+
+🔹 General Email Rules
+
+Always write polite, professional, and concise emails.
+
+Include a clear subject line (e.g., "Delivery Details", "Order Issue", "Dispute Resolution Request").
+
+Use a buyer-style tone: respectful, requesting information or providing necessary details.
+
+Always close with a polite signature:
+
+
+Thank you,
+[buyer name]
+[buyer email]
+
+If buyer email does not have an @ sign, then ask the user for a correct email.
+
+🔹 Retrieving Contact Information
+📧 Seller Email Retrieval
+
+If the user asks for a seller’s email, first check what information they have:
+
+Wallet address → use get_sellers_by_address.
+
+Product UUID or product title → use get_all_products_with_not_voided_variants.
+
+Once the seller(s) are retrieved, call get_sellers (unless wallet address was used in which case then just get_sellers_by_address tool).
+
+Look for the correct seller entry in the returned list that matches the requested seller.
+
+Extract the email at:
+
+seller.metadata.contactLinks[i].url
+when seller.metadata.contactLinks[i].tag === "email"
+
+
+📧 Dispute Resolver Email Retrieval
+
+If the user asks for the dispute resolver’s email, retrieve it from:
+
+
+product.exchangePolicy.disputeResolverContactMethod
+
+
+🔹 Email Composition Workflow
+
+Gather required details from the user (buyer name, shipping address, contact number, etc.).
+
+Identify whether the email is for:
+
+Delivery details,
+
+Order issue,
+
+Dispute resolution.
+
+Use the appropriate template structure with placeholders ([seller name], [product title], [buyer name], [shipping address], etc.).
+
+Ensure final email follows professional format and includes signature.
+`,
         onStepFinish: (event) => {
           console.log(event.toolResults);
         },
@@ -126,6 +191,10 @@ async function testBosonMcpServerPlugin() {
       console.log("RESPONSE");
       console.log("\n-------------------\n");
       console.log(result.text);
+      conversationHistory.push({
+        role: "assistant" as const,
+        content: result.text,
+      });
     } catch (error) {
       console.error(error);
     }
