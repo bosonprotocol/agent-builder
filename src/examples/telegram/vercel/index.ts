@@ -538,7 +538,7 @@ When you need to use blockchain tools for a specific operation, the system will 
       : mcpTools;
 
     const result = await generateText({
-      model: anthropic("claude-3-5-sonnet-20241022"), // TODO: change model
+      model: anthropic("claude-4-sonnet-20250514"), // change model as needed
       messages,
       tools: toolResolver,
       maxSteps: 10,
