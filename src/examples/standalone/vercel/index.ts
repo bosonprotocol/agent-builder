@@ -49,6 +49,9 @@ async function testBosonMcpServerPlugin() {
   const account = privateKeyToAccount(privateKey as `0x${string}`);
 
   const chainConfig = CHAIN_MAP[chainId as keyof typeof CHAIN_MAP];
+  if (!chainConfig) {
+    throw new Error(`Unsupported CHAIN_ID: ${chainId}`);
+  }
   const chain = chainConfig.chain;
 
   // Define custom RPC URL (optional)
