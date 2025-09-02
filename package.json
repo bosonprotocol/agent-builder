@@ -5,10 +5,12 @@
   "packageManager": "npm@11.5.2",
   "workspaces": [
     "src/examples/standalone/vercel",
+    "src/examples/standalone/langchain",
     "src/examples/telegram/vercel"
   ],
   "scripts": {
     "start:standalone-vercel": "turbo run interact --filter=./src/examples/standalone/vercel --ui=tui",
+    "start:standalone-langchain": "turbo run interact --filter=./src/examples/standalone/langchain --ui=tui",
     "start:telegram-bot-vercel": "turbo run start --filter=./src/examples/telegram/vercel",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "lint:ci": "eslint . --ext ts --report-unused-disable-directives --max-warnings 100",
