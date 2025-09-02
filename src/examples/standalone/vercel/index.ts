@@ -9,7 +9,7 @@ import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
 import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 
 // Example test for the Boson MCP Server plugin
-async function testBosonMcpServerPlugin() {
+async function main() {
   // Initialize wallet client with private key
   const rawPrivateKey = process.env.PRIVATE_KEY;
   if (!rawPrivateKey) {
@@ -142,4 +142,4 @@ async function testBosonMcpServerPlugin() {
 }
 
 // Run the test
-testBosonMcpServerPlugin().catch(console.error);
+main().catch(console.error);

@@ -10,7 +10,7 @@ import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 import { sendEmailTool } from "./tools.ts";
 
 // Example test for the Boson MCP Server plugin
-async function testBosonMcpServerPlugin() {
+async function main() {
   // Initialize wallet client with private key
   const rawPrivateKey = process.env.PRIVATE_KEY;
   if (!rawPrivateKey) {
@@ -207,4 +207,4 @@ Ensure final email follows professional format and includes signature.
 }
 
 // Run the test
-testBosonMcpServerPlugin().catch(console.error);
+main().catch(console.error);
