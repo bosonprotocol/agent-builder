@@ -6,7 +6,7 @@ import type { ChatPromptTemplate } from "@langchain/core/prompts";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getOnChainTools } from "@goat-sdk/adapter-langchain";
 import { viem } from "@goat-sdk/wallet-viem";
-import { createWalletClient, http } from "viem";
+import { createWalletClient, createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
 import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
@@ -24,6 +24,11 @@ async function main() {
   const bosonMcpUrl = BOSON_MCP_URL;
   if (!bosonMcpUrl) {
     throw new Error("BOSON_MCP_URL environment variable is required");
+  }
+
+  const chainId = process.env.CHAIN_ID;
+  if (!chainId) {
+    throw new Error("CHAIN_ID environment variable is required");
   }
 
   // Ensure private key has 0x prefix and is the correct length
@@ -45,8 +50,10 @@ async function main() {
 
   const account = privateKeyToAccount(privateKey as `0x${string}`);
 
-  // Use first supported chain from the CHAIN_MAP which depends on the BOSON_MCP_URL and hence its environment
-  const chainConfig = Object.values(CHAIN_MAP)[0];
+  const chainConfig = CHAIN_MAP[chainId as keyof typeof CHAIN_MAP];
+  if (!chainConfig) {
+    throw new Error(`Unsupported CHAIN_ID: ${chainId}`);
+  }
   const chain = chainConfig.chain;
 
   // Define custom RPC URL (optional)
@@ -64,7 +71,6 @@ async function main() {
   console.log("Chain:", chain.name, "ID:", chain.id);
 
   // Check balance using a public client
-  const { createPublicClient } = await import("viem");
   const publicClient = createPublicClient({
     chain,
     transport: http(rpcUrl),
@@ -85,8 +91,6 @@ async function main() {
       bosonProtocolPlugin({ url: bosonMcpUrl }),
     ],
   });
-
-  console.log("Available tools:", Object.keys(tools));
   
   // Initialize LLM
   const llm = new ChatAnthropic({
