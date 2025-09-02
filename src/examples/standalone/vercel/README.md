@@ -8,17 +8,17 @@ npm run start
 
 ### Usage Example
 
-#### Sets the system context (optional)
+#### Set the system context (optional)
 
-By using the `/system:` prefix, you can define a system context that will be used with every prompt later on.
+By using the `/system:` prefix, you can define a system context that will be applied to every prompt afterwards.
 
-This allows to define the context about the AI Agent and will influence their actions.
+This allows to define the context for the AI Agent, influencing its behavior and actions.
 
 Enter the following prompt (all in one line):
 ```
 /system:
 # Introducing **Élan Verité**
-a textile house where craftsmanship, sustainability, and timeless design converge to offer an alternative to fast fashion.
+A textile house where craftsmanship, sustainability, and timeless design converge to offer an alternative to fast fashion.
 
 Image: https://ibb.co/Fk6gRGK2
 

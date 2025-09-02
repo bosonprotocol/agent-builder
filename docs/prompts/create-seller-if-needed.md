@@ -25,7 +25,7 @@ When the transaction has been approved, the protocol data requires a few seconds
 
 - First, check if the seller already exists on Boson Protocol for the configId passed as a parameter and for the current wallet.
 - If it exists, return the sellerId as a number.
-- If it does not exist, interact with Boson Protocol, as described in the INTERACTION WITH BOSON PROTOCOL paragraph, to get the seller created. Use the wallet address as signerAddress, generate a relevant name and description for the seller, sets the admin, assistant, and treasury to the wallet address, sets the contractUri to an empty string, sets the type to "SELLER", sets the kind to "individual".
+- If it does not exist, interact with Boson Protocol, as described in the INTERACTION WITH BOSON PROTOCOL paragraph, to get the seller created. Use the wallet address as signerAddress, generate a relevant name and description for the seller, set the admin, assistant, and treasury to the wallet address, set the contractUri to an empty string, set the type to "SELLER" and set the kind to "individual".
 - When the seller has been created, return the seller id of the created seller.
 - If any error happens, return the error message.
 
