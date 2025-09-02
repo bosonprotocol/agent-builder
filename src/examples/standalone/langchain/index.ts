@@ -103,7 +103,7 @@ async function main() {
   // Create structured chat agent
   const agent = await createStructuredChatAgent({
     llm,
-    tools,
+    tools: tools as any, // Type assertion to resolve complex type inference
     prompt,
   });
 
@@ -114,7 +114,7 @@ async function main() {
 
   const agentExecutor = new AgentExecutor({
     agent,
-    tools,
+    tools: tools as any,
   });
 
   // Initialize chat history for conversation memory
