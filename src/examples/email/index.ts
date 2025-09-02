@@ -24,6 +24,10 @@ async function main() {
   if (!bosonMcpUrl) {
     throw new Error("BOSON_MCP_URL environment variable is required");
   }
+  const chainId = process.env.CHAIN_ID;
+  if (!chainId) {
+    throw new Error("CHAIN_ID environment variable is required");
+  }
 
   // Ensure private key has 0x prefix and is the correct length
   const privateKey = rawPrivateKey.startsWith("0x")
@@ -44,8 +48,10 @@ async function main() {
 
   const account = privateKeyToAccount(privateKey as `0x${string}`);
 
-  // Use first supported chain from the CHAIN_MAP which depends on the BOSON_MCP_URL and hence its environment
-  const chainConfig = Object.values(CHAIN_MAP)[0];
+  const chainConfig = CHAIN_MAP[chainId as keyof typeof CHAIN_MAP];
+  if (!chainConfig) {
+    throw new Error(`Unsupported CHAIN_ID: ${chainId}`);
+  }
   const chain = chainConfig.chain;
 
   // Define custom RPC URL (optional)
