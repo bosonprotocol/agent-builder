@@ -12,7 +12,7 @@ import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
 import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 
 // Example test for the Boson MCP Server plugin
-async function testBosonMcpServerPlugin() {
+async function main() {
   const rawPrivateKey = process.env.PRIVATE_KEY;
   if (!rawPrivateKey) {
     throw new Error("PRIVATE_KEY environment variable is required");
@@ -73,15 +73,14 @@ async function testBosonMcpServerPlugin() {
   const balance = await publicClient.getBalance({ address: account.address });
 
   if (balance === 0n) {
-    console.error("❌ Wallet has no MATIC tokens!");
-    console.log("🚰 Get test MATIC from: https://faucet.polygon.technology/");
+    console.error("❌ Wallet has no balance!");
     console.log("💳 Your address:", account.address);
     process.exit(1);
   }
 
   // Get tools with the Boson Protocol plugin
   const tools = await getOnChainTools({
-    wallet: viem(walletClient) as any, // Type assertion to resolve GOAT SDK version conflicts
+    wallet: viem(walletClient),
     plugins: [
       bosonProtocolPlugin({ url: bosonMcpUrl }),
     ],
@@ -92,7 +91,7 @@ async function testBosonMcpServerPlugin() {
   // Initialize LLM
   const llm = new ChatAnthropic({
     apiKey: anthropicApiKey,
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-4-sonnet-20250514", // change model as needed,
     temperature: 0,
   });
 
@@ -104,7 +103,7 @@ async function testBosonMcpServerPlugin() {
   // Create structured chat agent
   const agent = await createStructuredChatAgent({
     llm,
-    tools: tools as any,
+    tools,
     prompt,
   });
 
@@ -115,7 +114,7 @@ async function testBosonMcpServerPlugin() {
 
   const agentExecutor = new AgentExecutor({
     agent,
-    tools: tools as any,
+    tools,
   });
 
   // Initialize chat history for conversation memory
@@ -157,4 +156,4 @@ async function testBosonMcpServerPlugin() {
 }
 
 // Run the test
-testBosonMcpServerPlugin().catch(console.error);
+main().catch(console.error);
