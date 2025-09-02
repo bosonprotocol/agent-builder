@@ -4,13 +4,13 @@ A clean, simple LangChain agent that integrates with the Boson Protocol MCP serv
 
 ## Overview
 
-This agent demonstrates how to use LangChain's structured chat agent with Boson Protocol's MCP tools, providing access to 40+ decentralized commerce tools through a simple command-line interface.
+This agent demonstrates how to use LangChain's structured chat agent with Boson Protocol's MCP tools, providing access to decentralized commerce tools through a simple command-line chat interface.
 
 ## Features
 
 - **LangChain Integration**: Uses LangChain's structured chat agent with GOAT SDK adapter
 - **Direct Tool Usage**: No complex tool mapping - tools work directly with LangChain
-- **40+ Commerce Tools**: Full access to Boson Protocol's commerce functionality
+- **Commerce Tools**: Full access to Boson Protocol's commerce functionality
 - **Interactive CLI**: Simple command-line interface for testing
 - **Minimal Codebase**: Single-file implementation for easy understanding (~150 lines)
 
@@ -18,7 +18,7 @@ This agent demonstrates how to use LangChain's structured chat agent with Boson 
 
 ### Prerequisites
 
-1. Node.js 23.11.1+ (managed by Volta)
+1. Node.js 23.11.1+
 2. Access to Boson Protocol MCP server
 3. Anthropic API key
 
@@ -73,83 +73,14 @@ Or with environment variables inline:
 ANTHROPIC_API_KEY=your_key_here npm run start
 ```
 
-### Interactive Commands
-
-- Type any question or command in natural language
-- Type `exit` to quit the agent
-
-### Example Interactions
-
-```
-Enter your prompt (or "exit" to quit): What tools do you have available?
-
--------------------
-TOOLS CALLED
--------------------
-[Tool execution details will appear here]
-
--------------------
-RESPONSE
--------------------
-I have access to 40+ Boson Protocol tools including:
-- Seller Management: create_seller, get_sellers
-- Offer Management: create_offer, store_product_v1_metadata
-- Exchange Management: commit_to_offer, redeem_voucher
-- Dispute Management: raise_dispute, resolve_dispute
-- Fund Management: deposit_funds, withdraw_funds
-...
-```
-
-## Available Tools
-
-The agent has access to all Boson Protocol MCP tools:
-
-### Seller Management
-- `create_seller` - Create a new seller account
-- `get_sellers` - Query existing sellers
-- `get_sellers_by_address` - Find sellers by address
-- `get_dispute_resolvers` - Get dispute resolver information
-
-### Offer Management
-- `create_offer` - Create a new marketplace offer
-- `create_offer_with_condition` - Create conditional offers
-- `void_offer` - Cancel an existing offer
-- `commit_to_offer` - Purchase/commit to an offer
-- `store_product_v1_metadata` - Store product metadata on IPFS
-- `store_bundle_metadata` - Store bundle metadata
-- `render_contractual_agreement` - Generate contract agreements
-
-### Exchange Management
-- `get_exchanges` - Query exchanges
-- `complete_exchange` - Complete a successful exchange
-- `cancel_voucher` - Cancel a voucher (buyer)
-- `revoke_voucher` - Revoke a voucher (seller)
-- `redeem_voucher` - Redeem a voucher
-
-### Dispute Management
-- `raise_dispute` - Start a dispute process
-- `resolve_dispute` - Resolve disputes mutually
-- `escalate_dispute` - Escalate to dispute resolver
-- `decide_dispute` - Dispute resolver decision
-- `extend_dispute_timeout` - Extend dispute periods
-
-### Fund Management
-- `deposit_funds` - Deposit funds to treasury
-- `withdraw_funds` - Withdraw from treasury
-- `get_funds` - Query fund information
-
-### Transaction Tools
-- `sign_transaction` - Sign blockchain transactions
-- `sign_typed_data` - Sign structured data
-- `send_signed_transaction` - Submit signed transactions
-
 ## Configuration
 
-The agent uses a structured chat prompt from LangChain Hub (`hwchase17/structured-chat-agent`) which provides the framework for tool usage and structured responses.
+The agent uses a structured chat prompt from LangChain Hub ([hwchase17/structured-chat-agent](https://smith.langchain.com/hub/hwchase17?organizationId=6e7cb68e-d5eb-56c1-8a8a-5a32467e2996)) which provides the framework for tool usage and structured responses.
 
 ### MCP Server
 
 The agent connects to Boson Protocol's MCP server which provides all the commerce tools. The staging server is used by default for testing.
+You can run your own local enrionment from [agentic-commerce](https://github.com/bosonprotocol/agentic-commerce)  repository.
 
 ## Architecture
 
@@ -165,7 +96,7 @@ src/examples/standalone/langchain/
 
 ### Key Components
 
-- **`testBosonMcpServerPlugin`**: Main function implementing LangChain agent
+- **`main`**: Main function implementing LangChain agent
 - **`createStructuredChatAgent`**: LangChain's structured chat agent
 - **`AgentExecutor`**: Executes agent with tool access
 - **`getOnChainTools`**: GOAT SDK adapter for LangChain tools
@@ -195,20 +126,3 @@ src/examples/standalone/langchain/
    - Verify ANTHROPIC_API_KEY is correct
    - Check API quota and billing
    - Ensure model access permissions
-
-### Debug Mode
-
-Set `NODE_ENV=development` for additional debug logging:
-
-```bash
-NODE_ENV=development npm run start
-```
-
-## Integration with Monorepo
-
-This agent is part of the Boson Protocol agent builder monorepo:
-
-- Shared configuration via `@common/chains`
-- Consistent patterns with other examples
-- Turbo task orchestration
-- Workspace dependency management
