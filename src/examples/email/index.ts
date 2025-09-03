@@ -1,15 +1,46 @@
 import readline from "node:readline";
+
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
+import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 import { getOnChainTools } from "@goat-sdk/adapter-vercel-ai";
 import { viem } from "@goat-sdk/wallet-viem";
 import { generateText } from "ai";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
+
 import { sendEmailTool } from "./tools.ts";
 
-// Example test for the Boson MCP Server plugin
+async function multilineInput(message: string): Promise<string | null> {
+  console.log(message);
+  console.log('(Enter your text line by line. Type "DONE" to finish)\n');
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: undefined, // Don't pass output to prevent automatic echoing
+    terminal: false,
+  });
+
+  return new Promise((resolve) => {
+    const lines: string[] = [];
+
+    rl.on("line", (line) => {
+      if (line.trim().toLowerCase() === "done") {
+        rl.close();
+        resolve(lines.join("\n"));
+      } else {
+        lines.push(line);
+      }
+    });
+
+    rl.on("SIGINT", () => {
+      console.log("\nInput cancelled.");
+      rl.close();
+      resolve(null);
+    });
+  });
+}
+
 async function main() {
   // Initialize wallet client with private key
   const rawPrivateKey = process.env.PRIVATE_KEY;
@@ -38,7 +69,7 @@ async function main() {
   if (privateKey.length !== 66) {
     // 0x + 64 hex characters = 66 total
     throw new Error(
-      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`
+      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`,
     );
   }
 
@@ -98,20 +129,17 @@ async function main() {
   const anthropic = createAnthropic({
     apiKey: anthopicApiKey,
   });
-  // Example usage of the plugin's tool
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
 
   let conversationHistory: Parameters<typeof generateText>[0]["messages"] = [];
   while (true) {
-    const prompt = await new Promise<string>((resolve) => {
-      rl.question('Enter your prompt (or "exit" to quit): ', resolve);
-    });
+    const prompt = await multilineInput("Enter your prompt:");
+
+    if (prompt === null) {
+      console.log("Input cancelled.");
+      return;
+    }
 
     if (prompt === "exit") {
-      rl.close();
       break;
     }
     conversationHistory.push({ role: "user" as const, content: prompt });
@@ -122,7 +150,7 @@ async function main() {
       const result = await generateText({
         model: anthropic("claude-4-sonnet-20250514"), // change model as needed
         tools: tools,
-        maxSteps: 10, // Maximum number of tool invocations per request
+        maxSteps: 20, // Maximum number of tool invocations per request
         messages: conversationHistory,
         system: `You are an AI agent responsible for communicating with sellers and dispute resolvers on behalf of a buyer.
 Your role is to generate and send professional, structured emails to sellers or dispute resolvers, based on product or seller information retrieved from the Boson Protocol.
