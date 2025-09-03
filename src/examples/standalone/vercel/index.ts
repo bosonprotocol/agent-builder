@@ -8,9 +8,39 @@ import { viem } from "@goat-sdk/wallet-viem";
 import { generateText } from "ai";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import inquirer from "inquirer";
 
-// Example test for the Boson MCP Server plugin
+async function multilineInput(message: string): Promise<string | null> {
+  console.log(message);
+  console.log('(Enter your text line by line. Type "DONE" to finish)\n');
+  
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: undefined, // Don't pass output to prevent automatic echoing
+    terminal: false
+  });
+
+  return new Promise((resolve) => {
+    const lines: string[] = [];
+    
+    rl.on('line', (line) => {
+      if (line.trim().toLowerCase() === 'done') {
+        rl.close();
+        resolve(lines.join('\n'));
+      } else {
+        lines.push(line);
+      }
+    });
+    
+    rl.on('SIGINT', () => {
+      console.log('\nInput cancelled.');
+      rl.close();
+      resolve(null);
+    });
+  });
+}
+
+
+
 async function main() {
   // Initialize wallet client with private key
   const rawPrivateKey = process.env.PRIVATE_KEY;
@@ -111,26 +141,23 @@ async function main() {
   let parameters: string | undefined = undefined;
 
   while (true) {
-    const { input } = await inquirer.prompt([
-      {
-        type: "editor", // Opens system editor for multi-line input
-        name: "input",
-        message:
-          "Enter your prompt in your preferred editor (or 'exit' to quit):",
-      },
-    ]);
+    const prompt = await multilineInput('Enter your prompt:');
 
-    const prompt = input.trim();
+    if (prompt === null) {
+      console.log('Input cancelled.');
+      return;
+    }
+
     if (prompt === "exit") {
       break;
     }
 
-    if (prompt.startsWith("/system:")) {
+    if (typeof prompt === "string" && prompt.startsWith("/system:")) {
       system = prompt.replace("/system:", "").trim();
       console.log("System prompt set.");
       continue;
     }
-    if (prompt.startsWith("/parameters:")) {
+    if (typeof prompt === "string" && prompt.startsWith("/parameters:")) {
       parameters = prompt.replace("/parameters:", "").trim();
       console.log("Parameters set.");
       continue;
