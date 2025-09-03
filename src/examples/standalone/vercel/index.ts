@@ -152,12 +152,12 @@ async function main() {
       break;
     }
 
-    if (typeof prompt === "string" && prompt.startsWith("/system:")) {
+    if (prompt.startsWith("/system:")) {
       system = prompt.replace("/system:", "").trim();
       console.log("System prompt set.");
       continue;
     }
-    if (typeof prompt === "string" && prompt.startsWith("/parameters:")) {
+    if (prompt.startsWith("/parameters:")) {
       parameters = prompt.replace("/parameters:", "").trim();
       console.log("Parameters set.");
       continue;
