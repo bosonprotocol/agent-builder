@@ -1,15 +1,16 @@
 import readline from "node:readline";
-import { ChatAnthropic } from "@langchain/anthropic";
-import { AgentExecutor, createStructuredChatAgent } from "langchain/agents";
-import { pull } from "langchain/hub";
-import type { ChatPromptTemplate } from "@langchain/core/prompts";
-import { HumanMessage, AIMessage } from "@langchain/core/messages";
-import { getOnChainTools } from "@goat-sdk/adapter-langchain";
-import { viem } from "@goat-sdk/wallet-viem";
-import { createWalletClient, createPublicClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
 import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
+import { getOnChainTools } from "@goat-sdk/adapter-langchain";
+import { viem } from "@goat-sdk/wallet-viem";
+import { ChatAnthropic } from "@langchain/anthropic";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import type { ChatPromptTemplate } from "@langchain/core/prompts";
+import { AgentExecutor, createStructuredChatAgent } from "langchain/agents";
+import { pull } from "langchain/hub";
+import { createPublicClient, createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 
 // Example test for the Boson MCP Server plugin
 async function main() {
@@ -39,7 +40,7 @@ async function main() {
   // Validate private key length
   if (privateKey.length !== 66) {
     throw new Error(
-      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`
+      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`,
     );
   }
 
@@ -87,11 +88,9 @@ async function main() {
   // Get tools with the Boson Protocol plugin
   const tools = await getOnChainTools({
     wallet: viem(walletClient),
-    plugins: [
-      bosonProtocolPlugin({ url: bosonMcpUrl }),
-    ],
+    plugins: [bosonProtocolPlugin({ url: bosonMcpUrl })],
   });
-  
+
   // Initialize LLM
   const llm = new ChatAnthropic({
     apiKey: anthropicApiKey,
@@ -102,7 +101,9 @@ async function main() {
   // Pull the structured chat agent prompt from LangChain Hub
   // check the system prompt template here:
   // https://smith.langchain.com/hub/hwchase17/structured-chat-agent/f92e5ae4?organizationId=6e7cb68e-d5eb-56c1-8a8a-5a32467e2996
-  const prompt = await pull<ChatPromptTemplate>("hwchase17/structured-chat-agent");
+  const prompt = await pull<ChatPromptTemplate>(
+    "hwchase17/structured-chat-agent",
+  );
 
   // Create structured chat agent
   const agent = await createStructuredChatAgent({
