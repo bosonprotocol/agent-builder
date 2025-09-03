@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
-    "@types/prompt-sync": "^4.2.3",
     "cross-env": "^10.0.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
@@ -49,8 +48,7 @@
     "@bosonprotocol/agentic-commerce": "^1.0.0-alpha.86",
     "@bosonprotocol/common": "^1.31.0-alpha.11",
     "dotenv": "^17.2.1",
-    "grammy": "^1.38.1",
-    "inquirer": "^12.9.4"
+    "grammy": "^1.38.1"
   },
   "volta": {
     "node": "23.11.1",
