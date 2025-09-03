@@ -124,15 +124,33 @@ async function main() {
   // Initialize chat history for conversation memory
   const chatHistory: (HumanMessage | AIMessage)[] = [];
 
-  while (true) {
-    const prompt = await new Promise<string>((resolve) => {
-      rl.question('Enter your prompt (or "exit" to quit): ', resolve);
-    });
-
-    if (prompt === "exit") {
-      rl.close();
-      break;
+  // Helper function to collect multiline prompt input
+  const collectUserInput = async (): Promise<string> => {
+    const lines: string[] = [];
+    const initialMessage = 'Enter your prompt (Shift+Enter for new line, "exit" to quit):';
+    console.log(initialMessage);
+    
+    while (true) {
+      const line = await new Promise<string>((resolve) => {
+        rl.question('> ', resolve);
+      });
+      
+      if (line.trim() === "exit") {
+        rl.close();
+        process.exit(0);
+      }
+      
+      if (line.endsWith('\\')) { // Shift+Enter pressed
+        lines.push(line.slice(0, -1));
+      } else { // Enter pressed
+        lines.push(line);
+        return lines.join('\n').trim();
+      }
     }
+  };
+
+  while (true) {
+    const prompt = await collectUserInput();
 
     console.log("\n-------------------\n");
     console.log("TOOLS CALLED");
