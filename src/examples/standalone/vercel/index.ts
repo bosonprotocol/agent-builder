@@ -9,8 +9,39 @@ import { generateText } from "ai";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-// Example test for the Boson MCP Server plugin
-async function testBosonMcpServerPlugin() {
+async function multilineInput(message: string): Promise<string | null> {
+  console.log(message);
+  console.log('(Enter your text line by line. Type "DONE" to finish)\n');
+  
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: undefined, // Don't pass output to prevent automatic echoing
+    terminal: false
+  });
+
+  return new Promise((resolve) => {
+    const lines: string[] = [];
+    
+    rl.on('line', (line) => {
+      if (line.trim().toLowerCase() === 'done') {
+        rl.close();
+        resolve(lines.join('\n'));
+      } else {
+        lines.push(line);
+      }
+    });
+    
+    rl.on('SIGINT', () => {
+      console.log('\nInput cancelled.');
+      rl.close();
+      resolve(null);
+    });
+  });
+}
+
+
+
+async function main() {
   // Initialize wallet client with private key
   const rawPrivateKey = process.env.PRIVATE_KEY;
   if (!rawPrivateKey) {
@@ -38,7 +69,7 @@ async function testBosonMcpServerPlugin() {
   if (privateKey.length !== 66) {
     // 0x + 64 hex characters = 66 total
     throw new Error(
-      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`,
+      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`
     );
   }
 
@@ -110,12 +141,14 @@ async function testBosonMcpServerPlugin() {
   let parameters: string | undefined = undefined;
 
   while (true) {
-    const prompt = await new Promise<string>((resolve) => {
-      rl.question('Enter your prompt (or "exit" to quit): ', resolve);
-    });
+    const prompt = await multilineInput('Enter your prompt:');
+
+    if (prompt === null) {
+      console.log('Input cancelled.');
+      return;
+    }
 
     if (prompt === "exit") {
-      rl.close();
       break;
     }
 
@@ -158,4 +191,4 @@ async function testBosonMcpServerPlugin() {
 }
 
 // Run the test
-testBosonMcpServerPlugin().catch(console.error);
+main().catch(console.error);
