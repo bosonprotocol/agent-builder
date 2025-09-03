@@ -3,14 +3,18 @@
   "version": "1.0.0",
   "main": "eslint.config.js",
   "packageManager": "npm@11.5.2",
+  "type": "commonjs",
   "workspaces": [
     "src/examples/standalone/vercel",
     "src/examples/standalone/langchain",
-    "src/examples/telegram/vercel"
+    "src/examples/telegram/vercel",
+    "src/examples/email"
   ],
   "scripts": {
-    "start:standalone-vercel": "npm run start --prefix=./src/examples/standalone/vercel",
-    "start:telegram-bot-vercel": "turbo run start --filter=./src/examples/telegram/vercel",
+    "start:standalone-vercel": "npm start --prefix ./src/examples/standalone/vercel",
+    "start:standalone-langchain": "npm start --prefix ./src/examples/standalone/langchain",
+    "start:email": "npm start --prefix ./src/examples/email",
+    "start:telegram-bot-vercel": "npm start --prefix ./src/examples/telegram/vercel",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "lint:ci": "eslint . --ext ts --report-unused-disable-directives --max-warnings 100",
     "lint:fix": "eslint . --ext ts --fix"
@@ -46,7 +50,7 @@
     "typescript-eslint": "^8.40.0"
   },
   "dependencies": {
-    "@bosonprotocol/agentic-commerce": "^1.0.0-alpha.86",
+    "@bosonprotocol/agentic-commerce": "^1.0.0-alpha.90",
     "@bosonprotocol/common": "^1.31.0-alpha.11",
     "dotenv": "^17.2.1",
     "grammy": "^1.38.1"
