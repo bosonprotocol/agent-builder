@@ -67,7 +67,7 @@ async function main() {
   if (privateKey.length !== 66) {
     // 0x + 64 hex characters = 66 total
     throw new Error(
-      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`
+      `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`,
     );
   }
 
@@ -127,11 +127,6 @@ async function main() {
   console.log("Available tools:", Object.keys(tools));
   const anthropic = createAnthropic({
     apiKey: anthopicApiKey,
-  });
-  // Example usage of the plugin's tool
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
   });
 
   let conversationHistory: Parameters<typeof generateText>[0]["messages"] = [];
