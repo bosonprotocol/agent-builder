@@ -1,0 +1,13 @@
+{
+  "name": "email",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx cross-env NODE_ENV=production ts-node -r tsconfig-paths/register -r dotenv/config index.ts",
+    "interact": "npm run start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
