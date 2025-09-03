@@ -150,7 +150,10 @@ async function main() {
       break;
     }
 
-    conversationHistory.push({ role: "user" as const, content: prompt });
+    conversationHistory.push({
+      role: "user" as const,
+      content: `${prompt}${parameters ? `\n\nParameters: ${parameters}` : ""}`,
+    });
     if (prompt.startsWith("/system:")) {
       system = prompt.replace("/system:", "").trim();
       console.log("System prompt set.");
@@ -171,7 +174,6 @@ async function main() {
         tools: tools,
         messages: conversationHistory,
         maxSteps: 20, // Maximum number of tool invocations per request
-        prompt: `${prompt}${parameters ? `\n\nParameters: ${parameters}` : ""}`,
         system: system,
         onStepFinish: (event) => {
           console.log(event.toolResults);
