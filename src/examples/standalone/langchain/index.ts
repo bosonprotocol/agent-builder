@@ -121,7 +121,10 @@ async function main() {
     plugins: [bosonProtocolPlugin({ url: bosonMcpUrl })],
   });
 
-  console.log("Available tools:", tools.map((tool: any) => tool.name));
+  console.log(
+    "Available tools:",
+    tools.map((tool: any) => tool.name),
+  );
 
   // Initialize LLM
   const llm = new ChatAnthropic({
