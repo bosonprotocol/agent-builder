@@ -1,0 +1,19 @@
+{
+  "name": "standalone-langchain",
+  "version": "1.0.0",
+  "description": "LangChain agent with Boson MCP integration",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx cross-env NODE_ENV=production ts-node -r tsconfig-paths/register -r dotenv/config index.ts",
+    "interact": "npm run start"
+  },
+  "keywords": ["langchain", "mcp", "boson", "ai-agent"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@goat-sdk/adapter-langchain": "^0.2.12",
+    "@langchain/core": "^0.3.72",
+    "@langchain/anthropic": "^0.3.26",
+    "langchain": "^0.3.6"
+  }
+}

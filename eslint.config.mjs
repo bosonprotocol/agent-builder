@@ -1,13 +1,15 @@
-// eslint.config.js
 import tseslint from "typescript-eslint";
 import onlyWarn from "eslint-plugin-only-warn";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import importPlugin from "eslint-plugin-import";
 import prettierPlugin from "eslint-plugin-prettier";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import unusedImports from "eslint-plugin-unused-imports";
 
-const project = resolve(process.cwd(), "./tsconfig.eslint.json");
+// Resolve project root correctly for parserOptions
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const project = "./tsconfig.eslint.json";
 
 export default [
   {
@@ -17,7 +19,7 @@ export default [
       "node_modules/",
       "dist/",
       "coverage/",
-      "eslint.config.js",
+      "eslint.config.mjs",
     ],
   },
   // Type-aware linting setup
@@ -28,7 +30,7 @@ export default [
       parserOptions: {
         ...(config.languageOptions?.parserOptions ?? {}),
         project,
-        tsconfigRootDir: process.cwd(),
+        tsconfigRootDir: __dirname,
       },
     },
   })),
@@ -59,7 +61,6 @@ export default [
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       // "@typescript-eslint/switch-exhaustiveness-check": "error"
-      // General cross-module restrictions are handled in specific overrides below
     },
   },
 ];

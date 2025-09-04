@@ -6,11 +6,13 @@
   "type": "commonjs",
   "workspaces": [
     "src/examples/standalone/vercel",
+    "src/examples/standalone/langchain",
     "src/examples/telegram/vercel",
     "src/examples/email"
   ],
   "scripts": {
     "start:standalone-vercel": "npm start --prefix ./src/examples/standalone/vercel",
+    "start:standalone-langchain": "npm start --prefix ./src/examples/standalone/langchain",
     "start:email": "npm start --prefix ./src/examples/email",
     "start:telegram-bot-vercel": "npm start --prefix ./src/examples/telegram/vercel",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
