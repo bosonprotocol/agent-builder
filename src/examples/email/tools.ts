@@ -1,7 +1,7 @@
-import zod from "zod";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { CoreTool } from "ai";
+import zod from "zod";
 
 const key = process.env["SMITHERY_GMAIL_KEY"];
 if (!key) {
@@ -19,7 +19,7 @@ const sendEmailSchema = zod.object({
 
 async function callEmailStdioMcpServer(
   toolName: string,
-  parameters: { [x: string]: unknown }
+  parameters: { [x: string]: unknown },
 ) {
   const mcp = new Client({ name: "mcp-client-cli", version: "1.0.0" });
   await mcp.connect(
@@ -33,7 +33,7 @@ async function callEmailStdioMcpServer(
         "--key",
         key,
       ],
-    })
+    }),
   );
   return await mcp.callTool({
     name: toolName,

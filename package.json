@@ -16,7 +16,6 @@
     "start:email": "npm start --prefix ./src/examples/email",
     "start:telegram-bot-vercel": "npm start --prefix ./src/examples/telegram/vercel",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
-    "lint:ci": "eslint . --ext ts --report-unused-disable-directives --max-warnings 100",
     "lint:fix": "eslint . --ext ts --fix"
   },
   "repository": {

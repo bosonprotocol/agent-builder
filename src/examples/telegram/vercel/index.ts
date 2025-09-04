@@ -1,22 +1,20 @@
-import { Bot } from "grammy";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
+import { type ConfigId, getChainIdFromConfigId } from "@bosonprotocol/common";
+import { BOSON_MCP_URL, CHAIN_MAP, isStaging } from "@common/chains.ts";
 import { getOnChainTools } from "@goat-sdk/adapter-vercel-ai";
 import { viem } from "@goat-sdk/wallet-viem";
-import { generateText } from "ai";
-import type { CoreTool } from "ai";
-import zod from "zod";
+import { type CoreTool, generateText } from "ai";
+import { Bot, Context, Filter } from "grammy";
 import {
-  createWalletClient,
-  http,
   createPublicClient,
+  createWalletClient,
   formatUnits,
+  http,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { polygonAmoy } from "viem/chains";
-import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-import { getChainIdFromConfigId } from "@bosonprotocol/common";
-import type { ConfigId } from "@bosonprotocol/common";
-import { BOSON_MCP_URL, CHAIN_MAP, isStaging } from "@common/chains.ts";
+import zod from "zod";
 
 // Environment variables validation
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
@@ -37,6 +35,7 @@ const anthropic = createAnthropic({
 
 // Create Telegram bot
 const bot = new Bot(TG_BOT_TOKEN);
+type MessageContext = Filter<Context, "message">;
 
 // Store conversation contexts and user wallets per user
 const userContexts = new Map<
@@ -48,7 +47,12 @@ interface WalletData {
   privateKey: string;
   address: string;
   // Store tools per chain/config
-  chainTools: Map<number, any>; // chainId -> tools
+  chainTools: Map<
+    number,
+    {
+      [key: string]: CoreTool;
+    }
+  >; // chainId -> tools
   availableConfigs: ConfigData[]; // Available MCP configurations
 }
 
@@ -72,7 +76,7 @@ async function getAvailableConfigs(): Promise<ConfigData[]> {
           // No wallet needed for read-only
           chain: polygonAmoy, // it doesn't matter which chain here, get_config_ids tool doesnt need any wallet
           transport: http("https://rpc-amoy.polygon.technology"),
-        })
+        }),
       ),
       plugins: [bosonProtocolPlugin({ url: BOSON_MCP_URL })],
     });
@@ -86,17 +90,17 @@ async function getAvailableConfigs(): Promise<ConfigData[]> {
       const configResult = await tools.get_config_ids.execute(null, null);
       console.log("✅ Available MCP configurations:", configResult);
       return (
-        JSON.parse(configResult.message[0].text).configIds.map(
+        (JSON.parse(configResult.message[0].text).configIds.map(
           (configId: string) =>
             ({
               chainId: getChainIdFromConfigId(
                 isStaging ? "staging" : "production",
-                configId as ConfigId
+                configId as ConfigId,
               ),
               id: configId,
               name: configId,
-            }) satisfies ConfigData
-        ) || []
+            }) satisfies ConfigData,
+        ) as ConfigData[]) || []
       );
     } else {
       console.warn("⚠️ get_config_ids tool not available");
@@ -125,7 +129,7 @@ async function initializeWalletForChain(privateKey: string, chainId: number) {
       !/^0x[0-9a-fA-F]{64}$/.test(formattedPrivateKey)
     ) {
       throw new Error(
-        "Invalid private key format. Must be 64 hex characters (with or without 0x prefix)"
+        "Invalid private key format. Must be 64 hex characters (with or without 0x prefix)",
       );
     }
 
@@ -144,12 +148,18 @@ async function initializeWalletForChain(privateKey: string, chainId: number) {
     });
 
     console.log(
-      `✅ Wallet tools initialized for chain ${chainId} (${chainConfig.chain.name})`
+      `✅ Wallet tools initialized for chain ${chainId} (${chainConfig.chain.name})`,
     );
     return tools;
   } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(
+        `Failed to initialize wallet for chain ${chainId}: ${error.message}`,
+      );
+    }
     throw new Error(
-      `Failed to initialize wallet for chain ${chainId}: ${error}`
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      `Failed to initialize wallet for chain ${chainId}: ${String(error)}`,
     );
   }
 }
@@ -159,13 +169,13 @@ async function getWalletToolsForConfig(userId: number, configId: string) {
   const walletData = userWallets.get(userId);
   if (!walletData) {
     throw new Error(
-      "No wallet configured. Use /wallet to set up your private key."
+      "No wallet configured. Use /wallet to set up your private key.",
     );
   }
 
   // Find the config to get chain ID
   const config = walletData.availableConfigs.find(
-    (c) => c.id === configId || c.chainId.toString() === configId
+    (c) => c.id === configId || c.chainId.toString() === configId,
   );
   if (!config) {
     throw new Error(`Configuration ${configId} not found in available configs`);
@@ -200,7 +210,7 @@ async function initializeUserWallet(privateKey: string) {
       !/^0x[0-9a-fA-F]{64}$/.test(formattedPrivateKey)
     ) {
       throw new Error(
-        "Invalid private key format. Must be 64 hex characters (with or without 0x prefix)"
+        "Invalid private key format. Must be 64 hex characters (with or without 0x prefix)",
       );
     }
 
@@ -211,17 +221,27 @@ async function initializeUserWallet(privateKey: string) {
 
     console.log(`💰 User wallet initialized: ${account.address}`);
     console.log(
-      `🔧 Available configurations: ${JSON.stringify(availableConfigs, null, 2)}`
+      `🔧 Available configurations: ${JSON.stringify(availableConfigs, null, 2)}`,
     );
 
     return {
       privateKey: formattedPrivateKey,
       address: account.address,
-      chainTools: new Map<number, any>(),
+      chainTools: new Map<
+        number,
+        {
+          [key: string]: CoreTool;
+        }
+      >(),
       availableConfigs,
     };
   } catch (error) {
-    throw new Error(`Failed to initialize wallet: ${error}`);
+    if (error instanceof Error) {
+      throw new Error(`Failed to initialize wallet: ${error.message}`);
+    }
+
+    // Handle non-Error cases (string, number, object, etc.)
+    throw new Error(`Failed to initialize wallet: ${JSON.stringify(error)}`);
   }
 }
 
@@ -230,6 +250,7 @@ async function getDefaultTools() {
   try {
     console.log("⚠️ Initializing tools without wallet support");
     const tools = await getOnChainTools({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       wallet: undefined as any,
       plugins: [bosonProtocolPlugin({ url: BOSON_MCP_URL })],
     });
@@ -302,7 +323,10 @@ bot.command("chains", async (ctx) => {
 
     await ctx.reply(message, { parse_mode: "HTML" });
   } catch (error) {
-    await ctx.reply(`❌ Error fetching chain information: ${error}`);
+    const message =
+      error instanceof Error ? error.message : JSON.stringify(error);
+
+    await ctx.reply(`❌ Error fetching chain information: ${message}`);
   }
 });
 
@@ -312,10 +336,10 @@ bot.command("wallet", async (ctx) => {
   if (!userId) return;
 
   if (userWallets.has(userId)) {
-    const wallet = userWallets.get(userId)!;
+    const wallet = userWallets.get(userId);
     await ctx.reply(
       `🔒 You already have a wallet configured!\n\n💰 Address: ${wallet.address}\n🔧 Configurations: ${wallet.availableConfigs.length} available\n\nUse /remove_wallet to remove it first if you want to change it.`,
-      { parse_mode: "HTML" }
+      { parse_mode: "HTML" },
     );
     return;
   }
@@ -337,7 +361,7 @@ Please send me your private key in the next message.
 🚰 *Get test tokens*: Use faucets for the chains you want to use
 
 Send your private key now:`,
-    { parse_mode: "HTML" }
+    { parse_mode: "HTML" },
   );
 });
 
@@ -349,7 +373,7 @@ bot.command("wallet_status", async (ctx) => {
   const wallet = userWallets.get(userId);
   if (!wallet) {
     await ctx.reply(
-      "❌ No wallet configured. Use /wallet to set up your private key."
+      "❌ No wallet configured. Use /wallet to set up your private key.",
     );
     return;
   }
@@ -374,10 +398,10 @@ bot.command("wallet_status", async (ctx) => {
           });
           const balanceFormatted = formatUnits(
             balance,
-            chainInfo.chain.nativeCurrency.decimals
+            chainInfo.chain.nativeCurrency.decimals,
           );
           statusMessage += `   • Balance: ${balanceFormatted} ${chainInfo.chain.nativeCurrency?.symbol || "ETH"}\n`;
-        } catch (error) {
+        } catch {
           statusMessage += `   • Balance: Error fetching\n`;
         }
 
@@ -390,7 +414,10 @@ bot.command("wallet_status", async (ctx) => {
 
     await ctx.reply(statusMessage, { parse_mode: "HTML" });
   } catch (error) {
-    await ctx.reply(`❌ Error checking wallet status: ${error}`);
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    const message = error instanceof Error ? error.message : String(error);
+
+    await ctx.reply(`❌ Error checking wallet status: ${message}`);
   }
 });
 
@@ -407,7 +434,7 @@ bot.command("remove_wallet", async (ctx) => {
   userWallets.delete(userId);
   await ctx.reply(
     "🗑️ *Wallet removed successfully!*\n\nYour private key and all chain tools have been cleared from memory for security.",
-    { parse_mode: "HTML" }
+    { parse_mode: "HTML" },
   );
 });
 
@@ -425,9 +452,9 @@ const waitingForPrivateKey = new Set<number>();
 
 // Handle private key input
 async function handlePrivateKeyInput(
-  ctx: any,
+  ctx: MessageContext,
   userId: number,
-  privateKey: string
+  privateKey: string,
 ) {
   waitingForPrivateKey.delete(userId);
 
@@ -453,14 +480,15 @@ async function handlePrivateKeyInput(
 📍 Use /chains to see all supported networks.
 
 You can now use blockchain features across multiple chains! Try asking me about Boson Protocol or blockchain operations.`,
-      { parse_mode: "HTML" }
+      { parse_mode: "HTML" },
     );
   } catch (error) {
-    await ctx.reply(`❌ *Failed to set up wallet*
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    const message = error instanceof Error ? error.message : String(error);
 
-Error: ${error}
-
-Please try again with a valid private key.`);
+    await ctx.reply(
+      `❌ *Failed to set up wallet*\n\nError: ${message}\n\nPlease try again with a valid private key.`,
+    );
   }
 }
 
@@ -507,12 +535,12 @@ When you need to use blockchain tools for a specific operation, the system will 
     const messages = [
       { role: "system" as const, content: systemMessage },
       ...context.map((msg) => ({
-        role: msg.role as "user" | "assistant",
+        role: msg.role,
         content: msg.content,
       })),
     ];
     const supportedConfigIds = userWallet?.availableConfigs.map(
-      (config) => config.id
+      (config) => config.id,
     );
     const resolveToolForConfig: CoreTool = {
       type: "function",
@@ -521,7 +549,7 @@ When you need to use blockchain tools for a specific operation, the system will 
           (value) => supportedConfigIds?.includes(value as ConfigId),
           (value) => ({
             message: `Invalid config ID: ${value}. Supported config IDs: ${supportedConfigIds?.join(", ")}`,
-          })
+          }),
         ),
       }),
       execute: async ({ configId }: { configId: string }) => {
@@ -566,7 +594,7 @@ When you need to use blockchain tools for a specific operation, the system will 
   } catch (error) {
     console.error("Error processing message:", error);
     await ctx.reply(
-      "❌ Sorry, I encountered an error while processing your message. Please try again."
+      "❌ Sorry, I encountered an error while processing your message. Please try again.",
     );
   }
 });
@@ -575,7 +603,7 @@ When you need to use blockchain tools for a specific operation, the system will 
 bot.on("message", async (ctx) => {
   if (!ctx.message.text) {
     await ctx.reply(
-      "📝 I can only process text messages right now. Please send me a text message!"
+      "📝 I can only process text messages right now. Please send me a text message!",
     );
   }
 });
@@ -588,13 +616,13 @@ bot.catch((err) => {
 // Graceful shutdown
 process.once("SIGINT", () => {
   console.log("Received SIGINT. Gracefully shutting down...");
-  bot.stop();
+  void bot.stop();
   process.exit(0);
 });
 
 process.once("SIGTERM", () => {
   console.log("Received SIGTERM. Gracefully shutting down...");
-  bot.stop();
+  void bot.stop();
   process.exit(0);
 });
 
@@ -611,7 +639,7 @@ async function startBot() {
     mcpTools = {};
   }
 
-  bot.start();
+  await bot.start();
   console.log("✅ Bot started successfully");
 }
 
