@@ -12,6 +12,36 @@ import { pull } from "langchain/hub";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
+async function multilineInput(message: string): Promise<string | null> {
+  console.log(message);
+  console.log('(Enter your text line by line. Type "DONE" to finish)\n');
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: undefined, // Don't pass output to prevent automatic echoing
+    terminal: false,
+  });
+
+  return new Promise((resolve) => {
+    const lines: string[] = [];
+
+    rl.on("line", (line) => {
+      if (line.trim().toLowerCase() === "done") {
+        rl.close();
+        resolve(lines.join("\n"));
+      } else {
+        lines.push(line);
+      }
+    });
+
+    rl.on("SIGINT", () => {
+      console.log("\nInput cancelled.");
+      rl.close();
+      resolve(null);
+    });
+  });
+}
+
 // Example test for the Boson MCP Server plugin
 async function main() {
   const rawPrivateKey = process.env.PRIVATE_KEY;
@@ -91,6 +121,8 @@ async function main() {
     plugins: [bosonProtocolPlugin({ url: bosonMcpUrl })],
   });
 
+  console.log("Available tools:", tools.map((tool: any) => tool.name));
+
   // Initialize LLM
   const llm = new ChatAnthropic({
     apiKey: anthropicApiKey,
@@ -112,11 +144,6 @@ async function main() {
     prompt,
   });
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
   const agentExecutor = new AgentExecutor({
     agent,
     tools: tools as any,
@@ -126,12 +153,14 @@ async function main() {
   const chatHistory: (HumanMessage | AIMessage)[] = [];
 
   while (true) {
-    const prompt = await new Promise<string>((resolve) => {
-      rl.question('Enter your prompt (or "exit" to quit): ', resolve);
-    });
+    const prompt = await multilineInput("Enter your prompt:");
+
+    if (prompt === null) {
+      console.log("Input cancelled.");
+      break;
+    }
 
     if (prompt === "exit") {
-      rl.close();
       break;
     }
 
