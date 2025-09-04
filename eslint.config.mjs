@@ -30,7 +30,7 @@ export default [
       parserOptions: {
         ...(config.languageOptions?.parserOptions ?? {}),
         project,
-        tsconfigRootDir: __dirname, // ✅ ensures relative project path resolves correctly
+        tsconfigRootDir: __dirname,
       },
     },
   })),
