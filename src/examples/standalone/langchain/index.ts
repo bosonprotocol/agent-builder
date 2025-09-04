@@ -5,7 +5,7 @@ import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 import { getOnChainTools } from "@goat-sdk/adapter-langchain";
 import { viem } from "@goat-sdk/wallet-viem";
 import { ChatAnthropic } from "@langchain/anthropic";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
 import type { ChatPromptTemplate } from "@langchain/core/prompts";
 import { AgentExecutor, createStructuredChatAgent } from "langchain/agents";
 import { pull } from "langchain/hub";
@@ -123,7 +123,9 @@ async function main() {
 
   console.log(
     "Available tools:",
-    tools.map((tool: any) => tool.name),
+    tools.map((tool) =>
+      typeof tool.name === "string" ? tool.name : "Unknwon tool name",
+    ),
   );
 
   // Initialize LLM
@@ -143,17 +145,19 @@ async function main() {
   // Create structured chat agent
   const agent = await createStructuredChatAgent({
     llm,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tools: tools as any, // Type assertion to resolve complex type inference
     prompt: systemPrompt,
   });
 
   const agentExecutor = new AgentExecutor({
     agent,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tools: tools as any,
   });
 
   // Initialize chat history for conversation memory
-  const chatHistory: (HumanMessage | AIMessage)[] = [];
+  const chatHistory: BaseMessage[] = [];
 
   while (true) {
     const prompt = await multilineInput("Enter your prompt:");

@@ -1,4 +1,5 @@
 import { type ChainId, getEnvConfigs } from "@bosonprotocol/common";
+import { defineChain } from "viem";
 import {
   arbitrum,
   arbitrumSepolia,
@@ -90,7 +91,10 @@ const ALL_CHAINS_MAP = {
       baseSepolia.rpcUrls.default.http[0] ||
       "https://base-sepolia.api.onfinality.io/public",
   }, // Base Sepolia
-} satisfies Record<ChainId, { chain: any; rpc: string }>;
+} satisfies Record<
+  ChainId,
+  { chain: ReturnType<typeof defineChain>; rpc: string }
+>;
 const envConfigs = getEnvConfigs(
   isLocal ? "local" : isStaging ? "staging" : "production",
 );
