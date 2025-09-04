@@ -133,10 +133,10 @@ async function main() {
     temperature: 0,
   });
 
-  // Pull the structured chat agent prompt from LangChain Hub
+  // Pull the structured chat agent system prompt from LangChain Hub
   // check the system prompt template here:
   // https://smith.langchain.com/hub/hwchase17/structured-chat-agent/f92e5ae4?organizationId=6e7cb68e-d5eb-56c1-8a8a-5a32467e2996
-  const prompt = await pull<ChatPromptTemplate>(
+  const systemPrompt = await pull<ChatPromptTemplate>(
     "hwchase17/structured-chat-agent",
   );
 
@@ -144,7 +144,7 @@ async function main() {
   const agent = await createStructuredChatAgent({
     llm,
     tools: tools as any, // Type assertion to resolve complex type inference
-    prompt,
+    prompt: systemPrompt,
   });
 
   const agentExecutor = new AgentExecutor({
