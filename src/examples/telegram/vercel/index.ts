@@ -1,7 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
 import { type ConfigId, getChainIdFromConfigId } from "@bosonprotocol/common";
-import { BOSON_MCP_URL, CHAIN_MAP, isStaging } from "@common/chains.ts";
 import { getOnChainTools } from "@goat-sdk/adapter-vercel-ai";
 import { viem } from "@goat-sdk/wallet-viem";
 import { type CoreTool, generateText } from "ai";
@@ -15,6 +14,8 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { polygonAmoy } from "viem/chains";
 import zod from "zod";
+
+import { BOSON_MCP_URL, CHAIN_MAP, isStaging } from "#common/chains.js";
 
 // Environment variables validation
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
@@ -76,7 +77,8 @@ async function getAvailableConfigs(): Promise<ConfigData[]> {
           // No wallet needed for read-only
           chain: polygonAmoy, // it doesn't matter which chain here, get_config_ids tool doesnt need any wallet
           transport: http("https://rpc-amoy.polygon.technology"),
-        }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        }) as any,
       ),
       plugins: [bosonProtocolPlugin({ url: BOSON_MCP_URL })],
     });

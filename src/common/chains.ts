@@ -15,6 +15,9 @@ import {
 // Environment variables validation
 export const BOSON_MCP_URL = process.env.BOSON_MCP_URL;
 export const isStaging = BOSON_MCP_URL?.includes("staging");
+export const isTesting =
+  BOSON_MCP_URL ===
+  "https://agentic-commerce-170470978472.europe-west1.run.app/mcp";
 export const isLocal =
   BOSON_MCP_URL?.includes("localhost") || BOSON_MCP_URL?.includes("127.0.0.1");
 
@@ -22,7 +25,12 @@ if (!BOSON_MCP_URL) {
   throw new Error("BOSON_MCP_URL environment variable is required");
 }
 
-if (!isLocal && !isStaging && !BOSON_MCP_URL?.includes("production")) {
+if (
+  !isTesting &&
+  !isLocal &&
+  !isStaging &&
+  !BOSON_MCP_URL?.includes("production")
+) {
   throw new Error(
     "BOSON_MCP_URL must include 'production' for production environment or 'staging' for staging environment",
   );
@@ -96,10 +104,16 @@ const ALL_CHAINS_MAP = {
   { chain: ReturnType<typeof defineChain>; rpc: string }
 >;
 const envConfigs = getEnvConfigs(
-  isLocal ? "local" : isStaging ? "staging" : "production",
+  isLocal
+    ? "local"
+    : isTesting
+      ? "testing"
+      : isStaging
+        ? "staging"
+        : "production",
 );
 export const CHAIN_MAP = Object.fromEntries(
   Object.entries(ALL_CHAINS_MAP).filter(([chainId]) =>
     envConfigs.some((config) => config.chainId.toString() === chainId),
   ),
-);
+) as Record<ChainId, { chain: ReturnType<typeof defineChain>; rpc: string }>;

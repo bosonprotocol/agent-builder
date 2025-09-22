@@ -1,0 +1,15 @@
+{
+  "name": "xmtp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start2": "npx cross-env NODE_ENV=production NODE_OPTIONS=\"--loader ts-node/esm\" ts-node -r tsconfig-paths/register -r dotenv/config index.ts",
+    "start": "npx cross-env NODE_ENV=production node -r dotenv/config ../../../dist/examples/xmtp/index.js",
+    "test-params": "npx cross-env NODE_ENV=production node -r dotenv/config ../../../dist/examples/xmtp/test-params.js",
+    "interact": "npm run start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

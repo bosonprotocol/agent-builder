@@ -2,14 +2,15 @@ import readline from "node:readline";
 
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-import { BOSON_MCP_URL, CHAIN_MAP } from "@common/chains.ts";
 import { getOnChainTools } from "@goat-sdk/adapter-vercel-ai";
 import { viem } from "@goat-sdk/wallet-viem";
 import { generateText } from "ai";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { sendEmailTool } from "./tools.ts";
+import { BOSON_MCP_URL, CHAIN_MAP } from "#common/chains.js";
+
+import { sendEmailTool } from "./tools.js";
 
 async function multilineInput(message: string): Promise<string | null> {
   console.log(message);
@@ -79,7 +80,7 @@ async function main() {
 
   const account = privateKeyToAccount(privateKey as `0x${string}`);
 
-  const chainConfig = CHAIN_MAP[chainId as keyof typeof CHAIN_MAP];
+  const chainConfig = CHAIN_MAP[chainId as unknown as keyof typeof CHAIN_MAP];
   if (!chainConfig) {
     throw new Error(`Unsupported CHAIN_ID: ${chainId}`);
   }

@@ -1,17 +1,38 @@
 import readline from "node:readline";
 
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { bosonProtocolPlugin } from "@bosonprotocol/agentic-commerce";
-import { getOnChainTools } from "@goat-sdk/adapter-langchain";
+import { bosonProtocolXmtpPlugin } from "@bosonprotocol/chat-sdk/mcp/server";
+import { getOnChainTools } from "@goat-sdk/adapter-vercel-ai";
 import { viem } from "@goat-sdk/wallet-viem";
-import { ChatAnthropic } from "@langchain/anthropic";
-import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
-import type { ChatPromptTemplate } from "@langchain/core/prompts";
-import { AgentExecutor, createStructuredChatAgent } from "langchain/agents";
-import { pull } from "langchain/hub";
-import { createPublicClient, createWalletClient, http } from "viem";
+import { generateText } from "ai";
+import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 import { BOSON_MCP_URL, CHAIN_MAP } from "#common/chains.js";
+
+const xmtpBosonMcpUrl = process.env.XMTP_BOSON_MCP_URL;
+const isStagingXMTP = xmtpBosonMcpUrl?.includes("staging");
+const isTestingXMTP =
+  xmtpBosonMcpUrl === "https://chat-sdk-408914412794.europe-west1.run.app/mcp";
+const isLocalXMTP =
+  xmtpBosonMcpUrl?.includes("localhost") ||
+  xmtpBosonMcpUrl?.includes("127.0.0.1");
+
+if (!xmtpBosonMcpUrl) {
+  throw new Error("XMTP_BOSON_MCP_URL environment variable is required");
+}
+
+if (
+  !isTestingXMTP &&
+  !isLocalXMTP &&
+  !isStagingXMTP &&
+  !xmtpBosonMcpUrl?.includes("production")
+) {
+  throw new Error(
+    "XMTP_BOSON_MCP_URL must include 'production' for production environment or 'staging' for staging environment",
+  );
+}
 
 async function multilineInput(message: string): Promise<string | null> {
   console.log(message);
@@ -43,21 +64,20 @@ async function multilineInput(message: string): Promise<string | null> {
   });
 }
 
-// Example test for the Boson MCP Server plugin
 async function main() {
+  // Initialize wallet client with private key
   const rawPrivateKey = process.env.PRIVATE_KEY;
   if (!rawPrivateKey) {
     throw new Error("PRIVATE_KEY environment variable is required");
   }
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-  if (!anthropicApiKey) {
+  const anthopicApiKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthopicApiKey) {
     throw new Error("ANTHROPIC_API_KEY environment variable is required");
   }
   const bosonMcpUrl = BOSON_MCP_URL;
   if (!bosonMcpUrl) {
     throw new Error("BOSON_MCP_URL environment variable is required");
   }
-
   const chainId = process.env.CHAIN_ID;
   if (!chainId) {
     throw new Error("CHAIN_ID environment variable is required");
@@ -68,14 +88,14 @@ async function main() {
     ? rawPrivateKey
     : `0x${rawPrivateKey}`;
 
-  // Validate private key length
+  // Validate private key format
   if (privateKey.length !== 66) {
+    // 0x + 64 hex characters = 66 total
     throw new Error(
       `Invalid private key length: expected 66 characters (0x + 64 hex), got ${privateKey.length}`,
     );
   }
 
-  // Validate private key format
   if (!/^0x[0-9a-fA-F]{64}$/.test(privateKey)) {
     throw new Error("Invalid private key format: must be hex string");
   }
@@ -103,6 +123,7 @@ async function main() {
   console.log("Chain:", chain.name, "ID:", chain.id);
 
   // Check balance using a public client
+  const { createPublicClient } = await import("viem");
   const publicClient = createPublicClient({
     chain,
     transport: http(rpcUrl),
@@ -116,79 +137,64 @@ async function main() {
     process.exit(1);
   }
 
-  // Get tools with the Boson Protocol plugin
-  const tools = await getOnChainTools({
+  const bosonTools = await getOnChainTools({
     wallet: viem(walletClient),
-    plugins: [bosonProtocolPlugin({ url: bosonMcpUrl })],
+    plugins: [
+      bosonProtocolPlugin({ url: bosonMcpUrl }),
+      bosonProtocolXmtpPlugin({
+        privateKey,
+        http: true,
+        url: xmtpBosonMcpUrl,
+      }),
+    ],
   });
 
-  console.log(
-    "Available tools:",
-    tools.map((tool) =>
-      typeof tool.name === "string" ? tool.name : "Unknwon tool name",
-    ),
-  );
+  const tools = bosonTools;
 
-  // Initialize LLM
-  const llm = new ChatAnthropic({
-    apiKey: anthropicApiKey,
-    model: "claude-4-sonnet-20250514", // change model as needed,
-    temperature: 0,
+  console.log("Available tools:", Object.keys(tools));
+  const anthropic = createAnthropic({
+    apiKey: anthopicApiKey,
   });
 
-  // Pull the structured chat agent system prompt from LangChain Hub
-  // check the system prompt template here:
-  // https://smith.langchain.com/hub/hwchase17/structured-chat-agent/f92e5ae4?organizationId=6e7cb68e-d5eb-56c1-8a8a-5a32467e2996
-  const systemPrompt = await pull<ChatPromptTemplate>(
-    "hwchase17/structured-chat-agent",
-  );
-
-  // Create structured chat agent
-  const agent = await createStructuredChatAgent({
-    llm,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tools: tools as any, // Type assertion to resolve complex type inference
-    prompt: systemPrompt,
-  });
-
-  const agentExecutor = new AgentExecutor({
-    agent,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tools: tools as any,
-  });
-
-  // Initialize chat history for conversation memory
-  const chatHistory: BaseMessage[] = [];
-
+  let conversationHistory: Parameters<typeof generateText>[0]["messages"] = [];
   while (true) {
     const prompt = await multilineInput("Enter your prompt:");
 
     if (prompt === null) {
       console.log("Input cancelled.");
-      break;
+      return;
     }
 
     if (prompt === "exit") {
       break;
     }
-
+    conversationHistory.push({ role: "user" as const, content: prompt });
     console.log("\n-------------------\n");
     console.log("TOOLS CALLED");
     console.log("\n-------------------\n");
     try {
-      const result = await agentExecutor.invoke({
-        input: prompt,
-        chat_history: chatHistory,
+      const result = await generateText({
+        model: anthropic("claude-4-sonnet-20250514"), // change model as needed
+        tools: tools,
+        maxSteps: 20, // Maximum number of tool invocations per request
+        messages: conversationHistory,
+        onStepFinish: (event) => {
+          console.log(JSON.stringify(event.toolResults, null, 2));
+        },
       });
 
       console.log("\n-------------------\n");
       console.log("RESPONSE");
       console.log("\n-------------------\n");
-      console.log(result.output);
-
-      // Add messages to chat history for context in next interaction
-      chatHistory.push(new HumanMessage(prompt));
-      chatHistory.push(new AIMessage(result.output));
+      console.log(result.text);
+      conversationHistory.push({
+        role: "assistant" as const,
+        content: result.text,
+      });
+      if (conversationHistory.length > 10) {
+        // remove "if", if you need the model to keep a longer conversation in memory
+        conversationHistory = conversationHistory.slice(-10);
+      }
     } catch (error) {
       console.error(error);
     }

@@ -6,6 +6,7 @@
 
 Boson Protocol is the Decentralized Commerce Protocol lying on EVM blockchain, like Ethereum, Polygon, Base, Optimism, Arbitrum and their respective testnets.
 Interacting with Boson Protocol allows to:
+
 - create entities (seller, buyer, dispute resolver) for the current user, identified with their wallet
 - create offers for seller or buyer
 - commit to an offer
@@ -14,6 +15,7 @@ Interacting with Boson Protocol allows to:
 - etc.
 
 To interact with Boson Protocol, the flow requires 3 steps:
+
 - call the specific tool depending on the requested action (for instance create-seller),
   this tool will return the transaction data, including 2 fields "to" and "data".
 - sign the transaction data ("to" and "data") with the current wallet.
