@@ -635,7 +635,9 @@ async function startBot() {
 
   try {
     mcpTools = await getDefaultTools();
-    console.log("✅ Default MCP tools initialized successfully");
+    console.log(
+      "✅ Default MCP tools initialized successfully (ignore the previous warning)",
+    );
   } catch (error) {
     console.error("❌ Failed to initialize default MCP tools:", error);
     mcpTools = {};

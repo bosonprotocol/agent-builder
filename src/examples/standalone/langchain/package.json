@@ -4,10 +4,15 @@
   "description": "LangChain agent with Boson MCP integration",
   "main": "index.js",
   "scripts": {
-    "start": "npx cross-env NODE_ENV=production ts-node -r tsconfig-paths/register -r dotenv/config index.ts",
+    "start": "npx cross-env NODE_ENV=production node -r dotenv/config ../../../../dist/examples/standalone/langchain/index.js",
     "interact": "npm run start"
   },
-  "keywords": ["langchain", "mcp", "boson", "ai-agent"],
+  "keywords": [
+    "langchain",
+    "mcp",
+    "boson",
+    "ai-agent"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

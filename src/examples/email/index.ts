@@ -123,7 +123,7 @@ async function main() {
 
   const tools = {
     ...bosonTools,
-    sendEmailTool,
+    send_email: sendEmailTool,
   };
 
   console.log("Available tools:", Object.keys(tools));
