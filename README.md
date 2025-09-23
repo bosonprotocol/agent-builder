@@ -257,3 +257,7 @@ This project uses Volta for Node.js version management:
 - **Issues**: [GitHub Issues](https://github.com/bosonprotocol/agent-builder/issues)
 - **Documentation**: Check individual example READMEs
 - **Boson Protocol**: [Protocol Documentation](https://docs.bosonprotocol.io/)
+
+# ⚠️ Warning
+
+These are just examples showcasing how agent developers can use our agentic commerce tools. The Agent examples are basic ones an do not implement an advanced context management. Deploying them to production might lead to unexpected behaviour.
