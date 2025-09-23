@@ -22,6 +22,7 @@ async function callEmailStdioMcpServer(
   parameters: { [x: string]: unknown },
 ) {
   const mcp = new Client({ name: "mcp-client-cli", version: "1.0.0" });
+  // TODO: follow xmtp example and connect only once
   await mcp.connect(
     new StdioClientTransport({
       command: "npx",

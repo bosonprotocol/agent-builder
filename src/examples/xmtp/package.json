@@ -1,10 +1,10 @@
 {
-  "name": "email",
+  "name": "xmtp",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx cross-env NODE_ENV=production node -r dotenv/config ../../../dist/examples/email/index.js",
+    "start": "npx cross-env NODE_ENV=production node -r dotenv/config ../../../dist/examples/xmtp/index.js",
     "interact": "npm run start"
   },
   "keywords": [],

@@ -20,6 +20,7 @@ export default [
       "dist/",
       "coverage/",
       "eslint.config.mjs",
+      "scripts/",
     ],
   },
   // Type-aware linting setup

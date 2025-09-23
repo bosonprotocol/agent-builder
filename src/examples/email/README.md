@@ -32,13 +32,13 @@ Start the interactive MCP client:
 This will:
 
 1. Connect to the **Boson MCP server** with your wallet.
-2. Load the **sendEmailTool** from the Gmail MCP server.
+2. Load the **send_email** from the Gmail MCP server.
 3. Allow you to enter prompts and watch the tools being called automatically.
 
 ## 🛠 Available Tools
 
 - **Boson MCP Tools** → On-chain commerce operations.
-- **sendEmailTool** → Send emails via Gmail MCP (configured with your Smithery key).
+- **send_email** → Send emails via Gmail MCP (configured with your Smithery key).
 
 ---
 

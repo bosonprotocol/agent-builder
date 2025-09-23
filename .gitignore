@@ -6,3 +6,6 @@ coverage
 .vscode
 *.log
 .turbo
+.gitignore
+*.db3
+*.db3-*

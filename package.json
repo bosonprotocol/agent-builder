@@ -1,20 +1,23 @@
 {
   "name": "agent-builder",
   "version": "1.0.0",
-  "main": "eslint.config.js",
+  "main": "dist/examples/standalone/vercel/index.js",
   "packageManager": "npm@11.5.2",
-  "type": "commonjs",
+  "type": "module",
   "workspaces": [
     "src/examples/standalone/vercel",
     "src/examples/standalone/langchain",
     "src/examples/telegram/vercel",
-    "src/examples/email"
+    "src/examples/email",
+    "src/examples/xmtp"
   ],
   "scripts": {
+    "watch": "rimraf dist && tsc --project tsconfig.json --watch",
     "start:standalone-vercel": "npm start --prefix ./src/examples/standalone/vercel",
     "start:standalone-langchain": "npm start --prefix ./src/examples/standalone/langchain",
     "start:email": "npm start --prefix ./src/examples/email",
     "start:telegram-bot-vercel": "npm start --prefix ./src/examples/telegram/vercel",
+    "start:xmtp": "npm start --prefix ./src/examples/xmtp",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts --fix"
   },
@@ -31,7 +34,8 @@
   "homepage": "https://github.com/bosonprotocol/agent-builder#readme",
   "description": "",
   "overrides": {
-    "@ai-sdk/provider": "1.1.3"
+    "@ai-sdk/provider": "1.1.3",
+    "viem": "2.37.3"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
@@ -50,12 +54,17 @@
   },
   "dependencies": {
     "@bosonprotocol/agentic-commerce": "^1.0.0-alpha.90",
+    "@bosonprotocol/chat-sdk": "^1.4.1-alpha.7",
     "@bosonprotocol/common": "^1.31.0-alpha.11",
     "dotenv": "^17.2.1",
-    "grammy": "^1.38.1"
+    "grammy": "^1.38.1",
+    "rimraf": "^6.0.1"
   },
   "volta": {
     "node": "23.11.1",
     "npm": "11.5.2"
+  },
+  "imports": {
+    "#common/*": "./dist/common/*"
   }
 }
