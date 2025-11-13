@@ -14,12 +14,10 @@ import {
 } from "viem/chains";
 // Environment variables validation
 export const BOSON_MCP_URL = process.env.BOSON_MCP_URL;
-export const isStaging = BOSON_MCP_URL?.includes("staging");
-export const isTesting =
-  BOSON_MCP_URL ===
-  "https://agentic-commerce-170470978472.europe-west1.run.app/mcp";
-export const isLocal =
-  BOSON_MCP_URL?.includes("localhost") || BOSON_MCP_URL?.includes("127.0.0.1");
+export const BOSON_ENV_NAME = process.env.BOSON_ENV_NAME;
+export const isStaging = BOSON_ENV_NAME === "staging";
+export const isTesting = BOSON_ENV_NAME === "testing";
+export const isLocal = BOSON_ENV_NAME === "local";
 
 if (!BOSON_MCP_URL) {
   throw new Error("BOSON_MCP_URL environment variable is required");
