@@ -12,6 +12,7 @@
     "src/examples/xmtp"
   ],
   "scripts": {
+    "build": "rimraf dist && tsc --project tsconfig.json",
     "watch": "rimraf dist && tsc --project tsconfig.json --watch",
     "start:standalone-vercel": "npm start --prefix ./src/examples/standalone/vercel",
     "start:standalone-langchain": "npm start --prefix ./src/examples/standalone/langchain",

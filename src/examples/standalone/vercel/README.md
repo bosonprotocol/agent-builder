@@ -1,5 +1,13 @@
 ## Standalone - vercel
 
+### Configure environment
+
+```
+cp .env.example .env
+```
+
+Edit the `.env` file and enter the missing values
+
 ### Run the script
 
 ```
@@ -111,9 +119,9 @@ Assuming:
 
 the following prompt will run the AI Agent to create a seller for the Agent wallet if there is no seller created yet.
 
-Blockchain used: Base Sepolia (defined by configId "staging-84532-0")
+Blockchain used: Base Sepolia (defined by configId "testing-84532-0")
 
-When successful, the create seller can be explored in the Boson dApp: https://interface-staging.on-fleek.app/#/sellers?configId=staging-84532-0&page=0&sortBy=validFromDate%3Adesc
+When successful, the create seller can be explored in the Boson dApp: https://interface-staging.on-fleek.app/#/sellers?configId=testing-84532-0&page=0&sortBy=validFromDate%3Adesc
 
 Enter the following prompt (all in one line):
 ```
@@ -142,7 +150,7 @@ When the transaction has been approved, the protocol data requires a few seconds
 
 ## ACTIONS
 
-- First, check if the seller already exists on Boson Protocol for the configId "staging-84532-0" and for the current wallet.
+- First, check if the seller already exists on Boson Protocol for the configId "testing-84532-0" and for the current wallet.
 - If it exists, return the sellerId as a number.
 - If it does not exist, interact with Boson Protocol, as described in the INTERACTION WITH BOSON PROTOCOL paragraph, to get the seller created. Use the wallet address as signerAddress, generate a relevant name and description for the seller, sets the admin, assistant, and treasury to the wallet address, sets the contractUri to an empty string, sets the type to "SELLER", sets the kind to "individual".
 - When the seller has been created, return the seller id of the created seller.
@@ -157,9 +165,9 @@ Assuming:
 
 the following prompt will run the AI Agent to create an offer for the product "*Patchwork Jackets*" defined in the context
 
-Blockchain used: Base Sepolia (defined by configId "staging-84532-0")
+Blockchain used: Base Sepolia (defined by configId "testing-84532-0")
 
-When successful, the create offer can be explored in the Boson dApp: https://interface-staging.on-fleek.app/#/products?configId=staging-84532-0&page=0&sortBy=validFromDate%3Adesc
+When successful, the create offer can be explored in the Boson dApp: https://interface-staging.on-fleek.app/#/products?configId=testing-84532-0&page=0&sortBy=validFromDate%3Adesc
 
 ```
 # Create an Offer
@@ -187,8 +195,8 @@ When the transaction has been approved, the protocol data requires a few seconds
 
 ## ACTIONS
 
-- First, find the seller on Boson Protocol for the configId "staging-84532-0" and for the current wallet.
-- Then, Interact with Boson Protocol, as described in the INTERACTION WITH BOSON PROTOCOL paragraph, to create an offer on boson protocol for the item Patchwork Jackets. The exchange token is "USDC" and must be explicitely specified with the exchangeTokenAddress parameter, the price is "123.40 USDC". The details_offerCategory shall be PHYSICAL. The shipping.returnPeriod shall be 7 days. The offer should be valid until December 31th 2027. The voucher must be valid for 3 month from the date they have been bought.The voucher Redeemable until Date should be set to 0. Generate unique identifiers (uuid like this: 123e4567-e89b-12d3-a456-426655440000) for uuid and productUUID. Use the wallet address as signerAddress and configId = "staging-84532-0"
+- First, find the seller on Boson Protocol for the configId "testing-84532-0" and for the current wallet.
+- Then, Interact with Boson Protocol, as described in the INTERACTION WITH BOSON PROTOCOL paragraph, to create an offer on boson protocol for the item Patchwork Jackets. The exchange token is "USDC" and must be explicitely specified with the exchangeTokenAddress parameter, the price is "123.40 USDC". The details_offerCategory shall be PHYSICAL. The shipping.returnPeriod shall be 7 days. The offer should be valid until December 31th 2027. The voucher must be valid for 3 month from the date they have been bought.The voucher Redeemable until Date should be set to 0. Generate unique identifiers (uuid like this: 123e4567-e89b-12d3-a456-426655440000) for uuid and productUUID. Use the wallet address as signerAddress and configId = "testing-84532-0"
 - When the offer has been created, return the offer id and product UUID.
 - If any error happens, return the error message.
 

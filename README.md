@@ -53,7 +53,10 @@ git clone https://github.com/bosonprotocol/agent-builder.git
 cd agent-builder
 
 # Install all dependencies
-npm install
+npm ci
+
+# Build examples
+npm run build
 ```
 
 ### Available Examples
