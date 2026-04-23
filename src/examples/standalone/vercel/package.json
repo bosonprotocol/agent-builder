@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@goat-sdk/adapter-vercel-ai": "^0.2.10"
+    "@goat-sdk/adapter-vercel-ai": "0.2.10"
   }
 }
