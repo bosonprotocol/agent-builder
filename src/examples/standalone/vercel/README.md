@@ -167,7 +167,7 @@ the following prompt will run the AI Agent to create an offer for the product "*
 
 Blockchain used: Base Sepolia (defined by configId "staging-84532-0")
 
-When successful, the create offer can be explored in the Boson dApp: https://boson-dapp-staging.pages.dev/#/products?configId=staging-84532-0&page=0&sortBy=validFromDate%3Adesc
+When successful, the created offer can be explored in the Boson dApp: https://boson-dapp-staging.pages.dev/#/products?configId=staging-84532-0&page=0&sortBy=validFromDate%3Adesc
 
 ```
 # Create an Offer
