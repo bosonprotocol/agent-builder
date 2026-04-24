@@ -138,7 +138,11 @@ async function main() {
     // special-cases), and sonnet-4-6 rejects top_p=-1. Drop top_p/top_k/temperature
     // to let the API defaults apply. Upgrading to 1.3.x would fix it but requires
     // @langchain/core^1 which conflicts with @goat-sdk/adapter-langchain.
-    invocationKwargs: { top_p: undefined, top_k: undefined, temperature: undefined },
+    invocationKwargs: {
+      top_p: undefined,
+      top_k: undefined,
+      temperature: undefined,
+    },
   });
 
   // Pull the structured chat agent system prompt from LangChain Hub
