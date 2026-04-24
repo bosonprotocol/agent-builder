@@ -166,7 +166,7 @@ async function main() {
     console.log("\n-------------------\n");
     try {
       const result = await generateText({
-        model: anthropic("claude-4-sonnet-20250514"), // change model as needed
+        model: anthropic("claude-sonnet-4-6"), // change model as needed
         tools: tools,
         messages: conversationHistory,
         maxSteps: 20, // Maximum number of tool invocations per request

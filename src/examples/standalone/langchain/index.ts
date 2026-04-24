@@ -132,8 +132,17 @@ async function main() {
   // Initialize LLM
   const llm = new ChatAnthropic({
     apiKey: anthropicApiKey,
-    model: "claude-4-sonnet-20250514", // change model as needed,
-    temperature: 0,
+    model: "claude-sonnet-4-6", // change model as needed,
+    // Workaround: @langchain/anthropic@0.3.x defaults topP=-1 for any model it
+    // doesn't recognize (sonnet-4-5 / opus-4-1 / haiku-4-5 are the only names it
+    // special-cases), and sonnet-4-6 rejects top_p=-1. Drop top_p/top_k/temperature
+    // to let the API defaults apply. Upgrading to 1.3.x would fix it but requires
+    // @langchain/core^1 which conflicts with @goat-sdk/adapter-langchain.
+    invocationKwargs: {
+      top_p: undefined,
+      top_k: undefined,
+      temperature: undefined,
+    },
   });
 
   // Pull the structured chat agent system prompt from LangChain Hub
