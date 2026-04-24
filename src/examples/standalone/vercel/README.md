@@ -1,5 +1,13 @@
 ## Standalone - vercel
 
+### Configure environment
+
+```
+cp .env.example .env
+```
+
+Edit the `.env` file and enter the missing values
+
 ### Run the script
 
 ```
