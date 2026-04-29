@@ -43,8 +43,6 @@ npm install
    # Required
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
    CHAIN_ID = chain_id_matching_chainId_from_config
-   
-   # Optional - defaults to staging if not provided
    BOSON_MCP_URL=https://mcp-staging.bosonprotocol.io/mcp
    
    # Optional - for debugging and tracing
