@@ -62,8 +62,6 @@ Create a `.env` file in the example folder:
 # Required
 TG_BOT_TOKEN=your_telegram_bot_token_here
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Optional - MCP server configuration
 BOSON_MCP_URL=https://mcp-staging.bosonprotocol.io/mcp
 
 # Optional - Environment mode
