@@ -21,6 +21,7 @@ export default [
       "coverage/",
       "eslint.config.mjs",
       "scripts/",
+      "docs/agentic-commerce/",
     ],
   },
   // Type-aware linting setup
