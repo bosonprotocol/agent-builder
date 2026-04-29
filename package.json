@@ -56,7 +56,7 @@
     "typescript-eslint": "^8.40.0"
   },
   "dependencies": {
-    "@bosonprotocol/agentic-commerce": "1.2.3",
+    "@bosonprotocol/agentic-commerce": "^1.2.4",
     "@bosonprotocol/chat-sdk": "1.4.5",
     "@bosonprotocol/common": "1.32.2",
     "dotenv": "^17.2.1",
