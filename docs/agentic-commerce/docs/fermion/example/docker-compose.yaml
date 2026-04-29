@@ -1,0 +1,107 @@
+services:
+
+  fermion-protocol-node:
+    image: ghcr.io/fermionprotocol/contracts/fermion-protocol-node@sha256:356b4a45e355bc388a0c25ec47b303126321dbbdb6a476b2583d814293f58b3b
+    # image: fermionprotocol/fermion-protocol-node@sha256:356b4a45e355bc388a0c25ec47b303126321dbbdb6a476b2583d814293f58b3b # can be pulled from Docker Hub as well
+    ports:
+      - "8545:8545"
+
+  fermion-mcp-server:
+    image: ghcr.io/bosonprotocol/mcp-server/fermion-mcp-server:main
+    # image: bosonprotocol/fermion-mcp-server:main
+    ports:
+      - "3000:3000"
+    environment:
+      - IPFS_METADATA_URL=http://host.docker.internal:5001
+      - THE_GRAPH_IPFS_URL=http://host.docker.internal:5001
+      - LOCALHOST_SUBSTITUTE=host.docker.internal
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  fermion-subgraph:
+    image: ghcr.io/fermionprotocol/core-components/fermion-subgraph@sha256:9d39cf36b798612c6cf3a00cf347df174db577ca280cc537260c6b3bfeaaa093
+    # image: fermionprotocol/fermion-subgraph@sha256:9d39cf36b798612c6cf3a00cf347df174db577ca280cc537260c6b3bfeaaa093 # can be pulled from Docker Hub as well
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8020:8020"
+      - "8030:8030"
+      - "8040:8040"
+    depends_on:
+      - ipfs
+      - postgres
+      - fermion-protocol-node
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      postgres_host: postgres
+      postgres_user: graph-node
+      postgres_pass: let-me-in
+      postgres_db: graph-node
+      ipfs: "ipfs:5001"
+      ethereum: "localhost:http://host.docker.internal:8545"
+      GRAPH_LOG: debug
+      GRAPH_ALLOW_NON_DETERMINISTIC_IPFS: "true"
+
+  postgres:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    command:
+      [
+        "postgres",
+        "-cshared_preload_libraries=pg_stat_statements",
+        "-cmax_connections=200"
+      ]
+    environment:
+      POSTGRES_USER: graph-node
+      POSTGRES_PASSWORD: let-me-in
+      POSTGRES_DB: graph-node
+      # FIXME: remove this env. var. which we shouldn't need. Introduced by
+      # <https://github.com/graphprotocol/graph-node/pull/3511>, maybe as a
+      # workaround for https://github.com/docker/for-mac/issues/6270?
+      PGDATA: "/var/lib/postgresql/data"
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+
+  ipfs:
+    image: ipfs/go-ipfs:master-2022-05-25-e8f1ce0
+    ports:
+      - "5001:5001"
+      - "8080:8080"
+    volumes:
+      - ./ipfs-config.sh:/container-init.d/ipfs-config.sh
+
+  meta-tx-gateway:
+    image: ghcr.io/bosonprotocol/meta-tx-gateway:main
+    # image: bosonprotocol/meta-tx-gateway:main # can be pulled from Docker Hub as well
+    user: "node:node"
+    ports:
+      - "8888:8888"
+    environment:
+      - ENV_NAME=local
+      - CONFIG_ID=local-31337-0
+      - PRIVATE_KEY=0x316b234f5fea007dcc40404188b588fb90cb9bb1e33fc163e212eab2f8565293 # ACCOUNT_9 from ./contracts/accounts.js
+      - RPC_NODE=http://host.docker.internal:8545
+      - FORWARDER_ADDRESS=0x4c5859f0F772848b2D91F1D83E2Fe57935348029
+      - API_KEYS=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      - 'API_IDS={"BOSON": ["xxxxxxxx-xxxx-xxxx-xxxx-111111111111"], "FERMION": ["xxxxxxxx-xxxx-xxxx-xxxx-222222222222"], "ERC20": ["xxxxxxxx-xxxx-xxxx-xxxx-333333333333"], "FORWARDER": ["xxxxxxxx-xxxx-xxxx-xxxx-444444444444"]}'
+      - BOSON_VOUCHER_INTERFACE_ID=0x6a474d2c
+    depends_on:
+      - fermion-protocol-node
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    command: ["sh", "-c", "sleep 3 && npm run start"]
+
+  opensea-api-mock:
+    image: ghcr.io/bosonprotocol/core-components/opensea-api-mock:main
+    # image: bosonprotocol/opensea-api-mock:main # can be pulled from Docker Hub as well
+    user: "node:node"
+    ports:
+      - "3334:3334"
+    environment:
+      - ENV_NAME=local
+      - RPC_NODE=http://host.docker.internal:8545
+    depends_on:
+      - fermion-protocol-node
+    extra_hosts:
+      - host.docker.internal:host-gateway
