@@ -64,7 +64,7 @@ TG_BOT_TOKEN=your_telegram_bot_token_here
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
 # Optional - MCP server configuration
-BOSON_MCP_URL=https://boson-mcp-server-staging-170470978472.europe-west2.run.app/mcp
+BOSON_MCP_URL=https://mcp-staging.bosonprotocol.io/mcp
 
 # Optional - Environment mode
 NODE_ENV=development

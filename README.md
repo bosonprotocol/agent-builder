@@ -135,7 +135,7 @@ ANTHROPIC_API_KEY=your_anthropic_key_here
 OPENAI_API_KEY=your_openai_key_here
 
 # Boson Protocol
-BOSON_MCP_URL=https://boson-mcp-server-staging-170470978472.europe-west2.run.app/mcp
+BOSON_MCP_URL=https://mcp-staging.bosonprotocol.io/mcp
 
 # Platform-specific
 TG_BOT_TOKEN=your_telegram_bot_token           # For Telegram examples

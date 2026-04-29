@@ -45,7 +45,7 @@ npm install
    CHAIN_ID = chain_id_matching_chainId_from_config
    
    # Optional - defaults to staging if not provided
-   BOSON_MCP_URL=https://boson-mcp-server-staging-170470978472.europe-west2.run.app/mcp
+   BOSON_MCP_URL=https://mcp-staging.bosonprotocol.io/mcp
    
    # Optional - for debugging and tracing
    LANGSMITH_API_KEY=your_langsmith_key_here

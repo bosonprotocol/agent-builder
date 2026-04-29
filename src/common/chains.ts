@@ -29,10 +29,10 @@ if (
   !isTesting &&
   !isLocal &&
   !isStaging &&
-  !BOSON_MCP_URL?.includes("production")
+  !BOSON_MCP_URL?.includes("mcp.bosonprotocol.io")
 ) {
   throw new Error(
-    "BOSON_MCP_URL must include 'production' for production environment or 'staging' for staging environment",
+    "BOSON_MCP_URL must include 'mcp.bosonprotocol.io' for production environment or 'staging' for staging environment",
   );
 }
 
