@@ -54,8 +54,11 @@ Then point this example at your private URL:
 XMTP_BOSON_MCP_URL=http://127.0.0.1:3000/mcp
 ```
 
-See chat-sdk's `docs/mcp-self-hosting.md` and `SECURITY.md` for the authoritative
-run instructions and security guidance.
+See chat-sdk's
+[docs/mcp-self-hosting.md](https://github.com/bosonprotocol/chat-sdk/blob/v2.0.0/docs/mcp-self-hosting.md)
+and
+[SECURITY.md](https://github.com/bosonprotocol/chat-sdk/blob/v2.0.0/SECURITY.md)
+for the authoritative run instructions and security guidance.
 
 ---
 
