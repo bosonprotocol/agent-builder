@@ -11,28 +11,12 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import { BOSON_MCP_URL, CHAIN_MAP } from "#common/chains.js";
 
+// The XMTP MCP server is no longer publicly hosted: you deploy it yourself.
+// Leave XMTP_BOSON_MCP_URL unset to run the server locally over stdio (the
+// plugin spawns `npx boson-xmtp-mcp-server` and forwards your PRIVATE_KEY to it
+// as BOSON_XMTP_PRIVATE_KEY). Set it to the URL of your own self-hosted HTTP
+// server to use HTTP transport instead.
 const xmtpBosonMcpUrl = process.env.XMTP_BOSON_MCP_URL;
-const isStagingXMTP = xmtpBosonMcpUrl?.includes("staging");
-const isTestingXMTP =
-  xmtpBosonMcpUrl === "https://chat-sdk-408914412794.europe-west1.run.app/mcp";
-const isLocalXMTP =
-  xmtpBosonMcpUrl?.includes("localhost") ||
-  xmtpBosonMcpUrl?.includes("127.0.0.1");
-
-if (!xmtpBosonMcpUrl) {
-  throw new Error("XMTP_BOSON_MCP_URL environment variable is required");
-}
-
-if (
-  !isTestingXMTP &&
-  !isLocalXMTP &&
-  !isStagingXMTP &&
-  !xmtpBosonMcpUrl?.includes("production")
-) {
-  throw new Error(
-    "XMTP_BOSON_MCP_URL must include 'production' for production environment or 'staging' for staging environment",
-  );
-}
 
 async function multilineInput(message: string): Promise<string | null> {
   console.log(message);
@@ -137,15 +121,25 @@ async function main() {
     process.exit(1);
   }
 
+  // Select the XMTP MCP transport: a self-hosted HTTP server when
+  // XMTP_BOSON_MCP_URL is provided, otherwise spawn the server locally over
+  // stdio. In stdio mode the plugin forwards `privateKey` to the spawned server
+  // as BOSON_XMTP_PRIVATE_KEY; in HTTP mode the self-hosted server holds its own
+  // key, so none is passed here.
+  const xmtpPluginOptions = xmtpBosonMcpUrl
+    ? ({ http: true, url: xmtpBosonMcpUrl } as const)
+    : ({ stdio: true, privateKey } as const);
+  // Log only the transport type — never the URL, which may carry credentials,
+  // signed query params, or internal hostnames.
+  console.log(
+    `XMTP MCP transport: ${xmtpBosonMcpUrl ? "http (self-hosted)" : "stdio (local subprocess)"}`,
+  );
+
   const bosonTools = await getOnChainTools({
     wallet: viem(walletClient),
     plugins: [
       bosonProtocolPlugin({ url: bosonMcpUrl }),
-      bosonProtocolXmtpPlugin({
-        privateKey,
-        http: true,
-        url: xmtpBosonMcpUrl,
-      }),
+      bosonProtocolXmtpPlugin(xmtpPluginOptions),
     ],
   });
 
