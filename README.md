@@ -139,7 +139,9 @@ BOSON_MCP_URL=https://mcp-staging.bosonprotocol.io/mcp
 
 # Platform-specific
 TG_BOT_TOKEN=your_telegram_bot_token           # For Telegram examples
-XMTP_BOSON_MCP_URL=your_xmtp_mcp_server_url   # For XMTP examples - MCP server URL for XMTP interactions
+# XMTP_BOSON_MCP_URL is OPTIONAL: only set it to your own self-hosted XMTP MCP
+# server URL. Leave it unset to run the server locally over stdio (the default).
+# XMTP_BOSON_MCP_URL=http://127.0.0.1:3000/mcp  # For XMTP examples - self-hosted HTTP server
 ```
 
 ## Documentation

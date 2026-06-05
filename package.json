@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@bosonprotocol/agentic-commerce": "1.2.5",
-    "@bosonprotocol/chat-sdk": "1.4.5",
+    "@bosonprotocol/chat-sdk": "2.0.0",
     "@bosonprotocol/common": "1.32.2",
     "dotenv": "^17.2.1",
     "grammy": "^1.38.1",
