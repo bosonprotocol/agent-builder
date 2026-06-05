@@ -129,8 +129,10 @@ async function main() {
   const xmtpPluginOptions = xmtpBosonMcpUrl
     ? ({ http: true, url: xmtpBosonMcpUrl } as const)
     : ({ stdio: true, privateKey } as const);
+  // Log only the transport type — never the URL, which may carry credentials,
+  // signed query params, or internal hostnames.
   console.log(
-    `XMTP MCP transport: ${xmtpBosonMcpUrl ? `http (${xmtpBosonMcpUrl})` : "stdio (local subprocess)"}`,
+    `XMTP MCP transport: ${xmtpBosonMcpUrl ? "http (self-hosted)" : "stdio (local subprocess)"}`,
   );
 
   const bosonTools = await getOnChainTools({
