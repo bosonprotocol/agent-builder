@@ -44,7 +44,7 @@ Run your own long-running server, bound to localhost, with the wallet key
 supplied as a secret in its environment:
 
 ```bash
-BOSON_XMTP_PRIVATE_KEY=<your_wallet_private_key> npx boson-xmtp-mcp-server --http
+PORT=3000 START=true BOSON_XMTP_PRIVATE_KEY=<your_wallet_private_key> npx boson-xmtp-mcp-server --http
 ```
 
 You can also run it via the `docker-compose.yml` shipped in the chat-sdk repo.
